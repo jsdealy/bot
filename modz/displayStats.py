@@ -1,6 +1,10 @@
+import re
 import csv, string
 from .numToRating import numToRating
 from .queue import Queue
+import re
+
+cutoffForLeaderboard = 1
 
 def getFilmDicts(rawfilms):
     with open("filmdata.csv", "r") as rob:
@@ -120,7 +124,14 @@ async def displayStats(mess, botsay, channel):
         await botsay(response, channel)
 
     # print an aggregate ranking of the best movies
-    if mess == "leaderboard!":
+    if mess.startswith("leaderboard"):
+        matchObject = re.match(r"leaderboard([\d]+)", mess)
+        if matchObject:
+            cutoffForLeaderboard = int(matchObject.group(1))
+        else:
+            cutoffForLeaderboard = 2
+        csv.register_dialect
+
         rawfilms = []
         scoredfilms = []
         getFilmDicts(rawfilms)
@@ -137,10 +148,14 @@ async def displayStats(mess, botsay, channel):
         memberscores = {"justin": [0, 0], "louis": [0, 0], "tim": [0, 0], "patrick": [0, 0]}
 
         # building text response
+        if cutoffForLeaderboard > 4 or cutoffForLeaderboard < 1:
+            await botsay("Bad cutoff!")
+            return
+
         for filmdict in scoredfilms: 
 
             # if there is more than one rating
-            if filmdict['ratings'] > 1:
+            if filmdict['ratings'] >= cutoffForLeaderboard:
 
                 #### storing some memberscore stuff for later
                 memberscores[filmdict['picker']][0] += filmdict['score']
