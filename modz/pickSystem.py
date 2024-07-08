@@ -2,7 +2,15 @@ import csv, os, string
 from .roleManip import updateRoles
 from .updateFile import updateFile
 
-async def pick(picker, members, film, botsay, tryprint, fieldnames, guild, channel, memberIDs):
+async def pick(picker,
+               members,
+               film,
+               botsay,
+               tryprint,
+               fieldnames,
+               guild,
+               channel,
+               memberIDs):
     tryprint(film)
     if film == "":
         await botsay("You didn't pick a film!", channel)
@@ -23,6 +31,9 @@ async def pick(picker, members, film, botsay, tryprint, fieldnames, guild, chann
     tmp += [picker]
     tryprint(f"tmp = {tmp}")
 
+    await botsay("*Updating the indicator colors...*", channel)
+    await updateRoles(guild, memberIDs, members, tmp)
+    
     await botsay("*Updating the rotation database...*", channel)
 
     # updating the rotation file
@@ -40,21 +51,29 @@ async def pick(picker, members, film, botsay, tryprint, fieldnames, guild, chann
     newDict = {}
     attset = set()
 
-    newDict = { 
-                   "film": f"{film}",
-                   "picker": f"{picker}",
-                   "justin": "0",
-                   "tim": "-1",
-                   "louis": "0",
-                   "patrick": "0",
-              }
-    tryprint(f"newDict = {newDict}")
+    try:
+        with open("attendees.csv", "r") as ob:
+            readatt = csv.reader(ob)
+            for j in readatt:
+                attset = set(j)
+            newDict = { 
+                           "film": f"{film}",
+                           "picker": f"{picker}",
+                           "justin": f"{0 if 'justin' in attset else -1}",
+                           "tim": f"{0 if 'tim' in attset else -1}",
+                           "louis": f"{0 if 'louis' in attset else -1}",
+                           "patrick": f"{0 if 'patrick' in attset else -1}",
+                      }
+            tryprint(f"newDict = {newDict}")
+    except:
+        await botsay("Problem reading attendees list.", channel)
     
     await botsay("*Writing the data...*", channel)
 
     # writing to newfilmdata
     try:
         with open("filmdata.csv", "r") as rdata, open("newfilmdata.csv", "w") as fob3:
+            
             reader = csv.DictReader(rdata)
             writer = csv.DictWriter(fob3, fieldnames=fieldnames)
             writer.writeheader()
@@ -72,7 +91,7 @@ async def pick(picker, members, film, botsay, tryprint, fieldnames, guild, chann
     response = f"\n**The film this week is {string.capwords(newDict['film'])}.**\n"
     response += f"**{tmp[0].title()} is now next in line to choose a film.**"
     await botsay(response, channel)
-    await botsay("*All done!* :pregnant_man:", channel)
+    await botsay("*All done!* :whale2:", channel)
 
 async def undopick(picker,
                      members,
@@ -128,6 +147,10 @@ async def undopick(picker,
     except:
         tryprint("Removal of most recent film row failed due to OS error.")
 
+
+    await botsay("*Restoring the indicator colors...*", channel)
+    await updateRoles(guild, memberIDs, members, old)
+
     await botsay("*Fixing the rotation data...*", channel)
     # updating the rotation file
     with open("newrotation.csv", "w") as fob2, open("rotation.csv", "r") as rob:
@@ -144,11 +167,13 @@ async def pickSystem(author, members, mess, usernames, botsay, tryprint, fieldna
 
     # undoing a pick 
     for i in range(len(members)):
+
         if (author.id == memberIDs[members[i]] and mess.startswith('undopick')) or (author.id == memberIDs["justin"] and mess.startswith(f"undo{members[i]}pick")):
+
             await undopick(members[i], members, botsay, tryprint, fieldnames, guild, channel, memberIDs)
 
     # making a pick
     for i in range(len(members)):
-        if (author.id == memberIDs[members[i]] and mess.startswith('pick:')) or (author.id == memberIDs["justin"] and mess.startswith(f"{members[i]}pick:")):
+        if (author.id == memberIDs[members[i]] and mess.startswith('pick:')) or (author.id == memberIDs["justin"] and mess.startswith(f"{members[i]}pick")):
             film = f"{mess.removeprefix(members[i]).removeprefix('pick:').removesuffix('*').strip()}"
             await pick(members[i], members, film, botsay, tryprint, fieldnames, guild, channel, memberIDs)

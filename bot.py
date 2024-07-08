@@ -24,6 +24,8 @@ from dotenv import load_dotenv
 
 attendees = members
 
+
+
 def tryprint(str):
     try: 
         print(str)
@@ -46,7 +48,6 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 client = discord.Client(intents=discord.Intents.all())
-
 
 @client.event
 async def on_ready():

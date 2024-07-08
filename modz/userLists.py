@@ -67,7 +67,7 @@ async def modList(mess, author, tryprint, botsay, channel):
 
     # the rest of this function is for modding a personal list
     # checking for list keyword; returning if not found
-    reob = re.compile(r'(^list[:!;]+)')
+    reob = re.compile(r'(^list[:!;]?)')
     res = reob.search(mess)
     pre = None
     if res != None:
