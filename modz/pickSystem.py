@@ -1,5 +1,4 @@
 import csv, os, string
-from .roleManip import updateRoles
 from .updateFile import updateFile
 
 async def pick(picker, members, film, botsay, tryprint, fieldnames, guild, channel, memberIDs):
