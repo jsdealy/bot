@@ -1,0 +1,13 @@
+                case "a+": rating = 12
+                case "a": rating  = 11
+                case "a-": rating = 10
+                case "b+": rating = 9
+                case "b": rating  = 8
+                case "b-": rating = 7
+                case "c+": rating = 6
+                case "c": rating  = 5
+                case "c-": rating = 4
+                case "d+": rating = 3
+                case "d": rating  = 2
+                case "d-": rating = 1
+                case "f": rating  = 0

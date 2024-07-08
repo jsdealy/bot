@@ -1,0 +1,18 @@
+def numToRating(num):
+    match num:
+        case -1:  return "unseen"
+        case 0:  return "no rating"
+        case 1:  return "f"
+        case 2:  return "d-"
+        case 3:  return "d"
+        case 4:  return "d+"
+        case 5:  return "c-"
+        case 6:  return "c"
+        case 7:  return "c+"
+        case 8:  return "b-"
+        case 9: return "b"
+        case 10: return "b+"
+        case 11: return "a-"
+        case 12: return "a"
+        case 13: return "a+"
+        case _: return "ERROR"
