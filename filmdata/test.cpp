@@ -11,42 +11,46 @@ int main() {
 
     bot.on_log(dpp::utility::cout_logger());
 
-    /* bot.on_ready([&bot](const dpp::ready_t& event) { */
-	/* /1* Create a new global command on ready event *1/ */
-	/* dpp::slashcommand newcommand("list", "manipulate your own personal list of films", bot.me.id); */
-
-	/* newcommand.add_option( */
-	    /* dpp::command_option(dpp::co_string, "action", "The list action you want to perform", true).set_auto_complete(true) */
-	/* ); */
-
-	/* /1* Register the command *1/ */
-	/* bot.global_command_create(newcommand); */
-    /* }); */
+    bot.on_ready([&bot](const dpp::ready_t& event) {
+	/* Create a new global command on ready event */
+	if (dpp::run_once<struct make_list_slashcommand>()) { 
+	    dpp::slashcommand newcommand("list", "manipulate your own personal list of films", bot.me.id);
+	    newcommand.add_option(
+		dpp::command_option(dpp::co_string, "action", "The list action you want to perform", true).set_auto_complete(true)
+	    );
+	    /* Register the command */
+	    bot.global_command_create(newcommand);
+	};
+	if (dpp::run_once<struct make_pick_slash_command>()) { 
+	    dpp::slashcommand newcommand("pick", "pick a film", bot.me.id);
+	    /* Register the command */
+	    bot.global_command_create(newcommand);
+	};
+    });
 
     /* The interaction create event is fired when someone issues your commands */
     bot.on_slashcommand([&bot](const dpp::slashcommand_t & event) {
 	/* Check which command they ran */
+	if (event.command.get_command_name() == "pick") {
+
+	}
 	if (event.command.get_command_name() == "list") {
 	    /* Fetch a parameter value from the command parameters */
-
-
-	    std::string hmm = std::get<std::string>(event.get_parameter("action"));
+	    std::string action = std::get<std::string>(event.get_parameter("action"));
 	    /* Reply to the command. There is an overloaded version of this
-		    * call that accepts a dpp::message so you can send embeds. */
+	    * call that accepts a dpp::message so you can send embeds. */
+	    bot.log(dpp::ll_debug, event.command.get_issuing_user().username + " " + action);
 
-
-	    bot.log(dpp::ll_debug, event.command.get_issuing_user().username + " " + hmm);
-
-	    if (hmm == "add_to_list") {
+	    if (action == "add_to_list") {
 		bot.log(dpp::ll_debug, "yo");
-		dpp::interaction_modal_response modal("my_modal", "Please enter stuff");
+		dpp::interaction_modal_response modal("my_modal", "Please complete the form...");
 		/* Add a text component */
 		modal.add_component(
 		    dpp::component().
-		    set_label("Type rammel").
+		    set_label("Add a Film to Your List").
 		    set_id("field_id").
 		    set_type(dpp::cot_text).
-		    set_placeholder("gumf").
+		    set_placeholder("enter film title").
 		    set_min_length(1).
 		    set_max_length(2000).
 		    set_text_style(dpp::text_paragraph)
@@ -55,11 +59,50 @@ int main() {
 		/* Trigger the dialog box. All dialog boxes are ephemeral */
 		event.dialog(modal);
 	    }
+	    else if (action == "cut_from_list") {
+		std::ifstream listInStream { event.command.get_issuing_user().username + "list" };
+
+		if (listInStream.fail()) {
+		    dpp::message msg(event.command.channel_id, "You don't have a list!");
+		    bot.log(dpp::ll_debug, "failed to open list: " + event.command.get_issuing_user().username + "list"  );
+		    event.reply(msg);
+		}
+		else {
+		    dpp::message msg(event.command.channel_id, "Cut a film from your list!");
+
+		    dpp::component selectCutMenu {};
+		    selectCutMenu.set_type(dpp::cot_selectmenu)
+			.set_placeholder("Pick something")
+			.set_id("myselectid");
+
+		    /* reading the list from memory <- 09/08/24 14:53:51 */ 
+		    char buff[200] {};
+		    JTB::Vec<JTB::Str> listVec {};
+		    listInStream.getline(buff, 199);
+		    while (listInStream.good()) {
+			listVec.push(buff);
+			listInStream.getline(buff, 199);
+		    }
+		    listInStream.close();
+
+
+		    /* for (int i = 0; i < listVec.size(); i++) { */
+			/* selectCutMenu.add_select_option(dpp::select_option(listVec.at(i).c_str(),listVec.at(i).remove(" ").c_str(),"")); */
+		    /* } */
+		    
+
+		    bot.message_create(dpp::message("bla").set_channel_id(event.command.get_channel().id));
+		    /* msg.add_component(dpp::component().add_component(selectCutMenu)); */
+		    /* event.reply(msg); */
+		    event.reply("test1");
+		}
+	    }
 	}
     });
 
     /* This event handles form submission for the modal dialog we create above */
     bot.on_form_submit([&](const dpp::form_submit_t & event) {
+
 
 	/* For this simple example we know the first element of the first row ([0][0]) is value type string.
 	 * In the real world it may not be safe to make such assumptions! */
