@@ -1,5 +1,6 @@
 # bot.py
 from modz.readIMDb import readIMDb
+from modz.nameconvert import nameconvert
 from modz.websearch import siteSearch
 from modz.members import members, usernames, fieldnames, memberIDs
 from modz.test import test
@@ -34,8 +35,8 @@ def tryprint(str):
     return
 
 
-imdbdb = []
-readIMDb(imdbdb)
+# imdbdb = []
+# readIMDb(imdbdb)
 
 def retIndexTwo(lst):
     return lst[1]
@@ -61,11 +62,13 @@ print(memberIDs)
 
 
 @client.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     if message.author == client.user:
         return
     guild = message.guild
     author = message.author
+    tryprint("a post from:")
+    tryprint(nameconvert(message.author.name))
     channel = message.channel
     mess = message.content.lower()
     sm = mess.split()
@@ -80,8 +83,8 @@ async def on_message(message):
     await siteSearch(mess, botsay, channel)
     await checkRotation(mess, members, botsay, tryprint, channel)
     await rateSystem(author, mess, usernames, members, botsay, fieldnames, tryprint, channel)
-    await pickSystem(author, members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs)
+    await pickSystem(nameconvert(message.author.name), members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs)
     await displayStats(mess, botsay, channel)
-    await lsIMDb(mess, message, imdbdb, tryprint, botsay, botsaylist, channel)
+    # await lsIMDb(mess, message, imdbdb, tryprint, botsay, botsaylist, channel)
     
 client.run(TOKEN)

@@ -1,75 +1,64 @@
-import csv, os, string
+import csv, os, string, sqlite3
+from datetime import datetime
 from .updateFile import updateFile
 
-async def pick(picker, members, film, botsay, tryprint, fieldnames, guild, channel, memberIDs):
+async def pick(picker: str, film: str, botsay, tryprint, channel):
     tryprint(film)
     if film == "":
         await botsay("You didn't pick a film!", channel)
         return
 
-    await botsay("*Determining the new queue...*", channel)
-
-    current = []
-    with open("rotation.csv", "r") as rob:
-        reader = csv.reader(rob)
-        current = next(reader)
-
-    # building the rotation
-    tmp = []
-    for j in range(len(current)):
-        if current[j] != picker:
-            tmp += [current[j]] 
-    tmp += [picker]
-    tryprint(f"tmp = {tmp}")
-
-    await botsay("*Updating the rotation database...*", channel)
-
-    # updating the rotation file
-    with open("newrotation.csv", "w") as fob2, open("rotation.csv", "r") as rob:
-        writer = csv.writer(fob2)
-        writer.writerow(tmp)
-        reader = csv.reader(rob)
-        writer.writerow(next(reader))
-
-    await updateFile(tryprint, "newrotation.csv", "rotation.csv")
-
     await botsay("*Creating a new film entry for the database...*", channel)
-
-    # creating the new filmdata dictionary ("line" for the filmdata csv)
-    newDict = {}
-    newDict = { 
-                   "film": f"{film}",
-                   "picker": f"{picker}",
-                   "justin": "0",
-                   "tim": "-1",
-                   "louis": "0",
-                   "patrick": "0",
-              }
-    tryprint(f"newDict = {newDict}")
-    
-    await botsay("*Writing the data...*", channel)
 
     # writing to newfilmdata
     try:
-        with open("filmdata.csv", "r") as rdata, open("newfilmdata.csv", "w") as fob3:
-            reader = csv.DictReader(rdata)
-            writer = csv.DictWriter(fob3, fieldnames=fieldnames)
-            writer.writeheader()
-            for readrow in reader:
-                writer.writerow(readrow)
-            writer.writerow(newDict)
-    except:
-        await botsay("Problem opening and editing filmdata.", channel)
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
 
-    # replacing old filmdata with newfilmdata
-    await updateFile(tryprint, "newfilmdata.csv", "filmdata.csv")
+        # adding a new member if necessary <== 10/07/24 10:20:33 # 
+        res = cur.execute("SELECT * FROM Members WHERE name LIKE ?;", (picker.lower(),))
+        result = res.fetchall()
+        if len(result) == 0:
+            cur.execute("INSERT INTO Members (name) VALUES (?);", (picker.lower(),))
+            res = cur.execute("SELECT * FROM Members WHERE name LIKE ?;", (picker.lower(),))
+            result = res.fetchall()
+            if len(result) > 0:
+                await botsay(f"Added member: {picker}!")
+            else:
+                raise Exception("Problem adding a new member!")
+
+        # adding the film <== 10/07/24 10:25:59 # 
+        cur.execute("INSERT INTO Films (film_name) VALUES (?);", (film.lower(),))
+        res = cur.execute("SELECT * FROM Films WHERE film_name LIKE ?;", (film.lower(),))
+        result = res.fetchall()
+        if len(result) > 0:
+            await botsay(f"Added film to main list: {film}!", channel)
+        else:
+            raise Exception(f"Problem adding {film}!")
+
+
+        # set the picker <== 10/07/24 10:54:55 # 
+        dateint = int(datetime.today().strftime("%Y%m%d"))
+        cur.execute(f'INSERT INTO Pickers(film_id, user_id, date) VALUES((SELECT id FROM Films WHERE film_name = ?),\
+        (SELECT id FROM Members WHERE name = ?), ?)', (film.lower(), picker.lower(), dateint,))
+        res = cur.execute("SELECT * FROM Pickers WHERE date = ?;", (dateint,))
+        result = res.fetchall()
+        if len(result) > 0:
+            await botsay(f"Added picker: {picker}!", channel)
+        else:
+            raise Exception(f"Problem adding pick: {film}, {picker}!")
+
+        # committing the changes <== 10/07/24 12:39:04 # 
+        con.commit()
+            
+    except Exception as e:
+        await botsay(f"Error: {e}", channel)
+        raise e
 
     # sending a response to the chat
-    response = ""
-    response = f"\n**The film this week is {string.capwords(newDict['film'])}.**\n"
-    response += f"**{tmp[0].title()} is now next in line to choose a film.**"
-    await botsay(response, channel)
-    await botsay("*All done!* :pregnant_man:", channel)
+    # response += f"**{} is now next in line to choose a film.**"
+    # await botsay(response, channel)
+    # await botsay("*All done!* :pregnant_man:", channel)
 
 async def undopick(picker,
                      members,
@@ -140,12 +129,11 @@ async def undopick(picker,
 async def pickSystem(author, members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs):
 
     # undoing a pick 
-    for i in range(len(members)):
-        if (author.id == memberIDs[members[i]] and mess.startswith('undopick')) or (author.id == memberIDs["justin"] and mess.startswith(f"undo{members[i]}pick")):
-            await undopick(members[i], members, botsay, tryprint, fieldnames, guild, channel, memberIDs)
+    # for i in range(len(members)):
+    #     if (author.id == memberIDs[members[i]] and mess.startswith('undopick')) or (author.id == memberIDs["justin"] and mess.startswith(f"undo{members[i]}pick")):
+    #         await undopick(members[i], members, botsay, tryprint, fieldnames, guild, channel, memberIDs)
 
     # making a pick
-    for i in range(len(members)):
-        if (author.id == memberIDs[members[i]] and mess.startswith('pick:')) or (author.id == memberIDs["justin"] and mess.startswith(f"{members[i]}pick:")):
-            film = f"{mess.removeprefix(members[i]).removeprefix('pick:').removesuffix('*').strip()}"
-            await pick(members[i], members, film, botsay, tryprint, fieldnames, guild, channel, memberIDs)
+    if (mess.startswith('pick:')):
+        film = f"{mess.removeprefix('pick:').removesuffix('*').strip()}"
+        await pick(author, film, botsay, tryprint, channel)
