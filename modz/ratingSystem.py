@@ -1,34 +1,68 @@
 import string, csv, os, sqlite3
+from enum import Enum
 from datetime import datetime
 from .numToRating import numToRating
-from .sqliteHelpers import memberIDSelectSkeleton, filmIDSelectSkeleton, wildcardWrapForLIKE
+from .sqliteHelpers import memberIDSelectSkeleton, filmIDSelectSkeleton, wildcardWrapForLIKE, getFilmsLIKE, today, getFilmID, getUserID
 
 ratingMode ={}
 skip = {}
 
+class Ratings(Enum):
+    NOTSEEN = -1
+    F = 1
+    DMINUS = 2
+    D = 3
+    DPLUS = 4
+    CMINUS = 5
+    C = 6
+    CPLUS = 7
+    BMINUS = 8
+    B = 9
+    BPLUS = 10
+    AMINUS = 11
+    A = 12
+    APLUS = 13
+    SKIP = -2
+
+
+def rateFilm(film_id: int, user_id: int, rating: int):
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT user_id FROM Ratings WHERE film_id = ?", (film_id,))
+    resultList = res.fetchall()
+    if len(resultList) > 0:
+        cur.execute("UPDATE Ratings SET rating = ?, date = ? WHERE film_id = ?, user_id = ?;", (rating,today(),film_id,user_id,))
+    else:
+        cur.execute("INSERT INTO Ratings (film_id,user_id,rating,date) VALUES (?,?,?,?)", (film_id,user_id,rating,today(),))
+    con.close()
+    return 
+
+
 async def rateSystem(author, mess, botsay, tryprint, channel):
+
     # ratings mode!
     if author in ratingMode.keys() and ratingMode[author] != 0:
         rating = 0
-        update = 0
+        successfulUpdate = False
 
+        # a case statement for getting the rating or skipping <== 10/20/24 16:04:06 # 
         match mess.strip():
-            case "x": rating  = -1
-            case "f": rating  = 1
-            case "d-": rating = 2
-            case "d": rating  = 3
-            case "d+": rating = 4
-            case "c-": rating = 5
-            case "c": rating  = 6
-            case "c+": rating = 7
-            case "b-": rating = 8
-            case "b": rating  = 9
-            case "b+": rating = 10
-            case "a-": rating = 11
-            case "a": rating  = 12
-            case "a+": rating = 13
+            case "x": rating  = Ratings.NOTSEEN.value
+            case "f": rating  = Ratings.F.value
+            case "d-": rating = Ratings.DMINUS.value
+            case "d": rating  = Ratings.D.value
+            case "d+": rating = Ratings.DPLUS.value
+            case "c-": rating = Ratings.CMINUS.value
+            case "c": rating  = Ratings.C.value
+            case "c+": rating = Ratings.CPLUS.value
+            case "b-": rating = Ratings.BMINUS.value
+            case "b": rating  = Ratings.B.value
+            case "b+": rating = Ratings.BPLUS.value
+            case "a-": rating = Ratings.AMINUS.value
+            case "a": rating  = Ratings.A.value
+            case "a+": rating = Ratings.APLUS.value
             case "skip": 
-                rating = -2
+                rating = Ratings.SKIP.value
                 if author not in skip.keys():
                     skip[author] = [ratingMode[author][0]]
                 else:
@@ -41,35 +75,17 @@ async def rateSystem(author, mess, botsay, tryprint, channel):
                         "Please use a letter grade (A+, B-, etc.).\nIf you haven't seen it please use 'X'.\n" \
                         f"To skip {string.capwords(ratingMode[author][0])} please type 'skip'.\n" \
                         "To exit rating mode please type 'exit'.", channel)  
-        if rating > -2:
+        if rating != Ratings.SKIP.value:
             try:
-                con = sqlite3.connect("filmdata.db")
-                cur = con.cursor()
-                dateint = int(datetime.today().strftime("%Y%m%d"))
-                res = cur.execute(f"UPDATE Ratings SET rating = ? \
-                    WHERE user_id = {memberIDSelectSkeleton()} AND \
-                    film_id = {filmIDSelectSkeleton()}", (author,wildcardWrapForLIKE(ratingMode[author][0]),))
-                res = cur.execute(f"SELECT * FROM Pickers WHERE user_id = {memberIDSelectSkeleton()} AND date = ?", (picker,dateint,))
-
-                with open("filmdata.csv", "r") as rdob, open("newfilmdata.csv", "w") as wrob:
-                    reader = csv.DictReader(rdob)
-                    writer = csv.DictWriter(wrob, fieldnames=fieldnames)
-                    writer.writeheader()
-                    for readrow in reader: 
-                        if readrow['film'] == ratingMode[author][0]:
-                            newDict = readrow
-                            newDict[author] = rating
-                            writer.writerow(newDict)
-                            update += 1
-                        else:
-                            writer.writerow(readrow)
-                    os.replace("newfilmdata.csv", "filmdata.csv")
-                    tryprint("Film data updated with a new rating.")
-                    update += 1
-            except:
-                tryprint("Film data update failed.")
-                await botsay("Ruh roh!", channel)
-        if update == 2:
+                film_id = getFilmID(ratingMode[author][0])[0][0]
+                user_id = getUserID(author)
+                rateFilm(film_id,user_id,rating)
+                tryprint("Film data updated with a new rating.")
+                successfulUpdate = True
+            except Exception as e:
+                tryprint(f"Film data update failed with error: {e}")
+                await botsay(f"Error: {e}", channel)
+        if successfulUpdate:
             await botsay(f"{author.title()} has given {string.capwords(ratingMode[author][0])}"\
                         f" a rating of {numToRating(rating).title()}.", channel)
         else: 
@@ -80,12 +96,13 @@ async def rateSystem(author, mess, botsay, tryprint, channel):
                 skip[author] = [ratingMode[author][0]]
             else:
                 skip[author] += [ratingMode[author][0]]
+        
         with open("filmdata.csv", "r") as rob:
             reader = csv.DictReader(rob)
             for row in reader:
                 if (author not in skip.keys() or row['film'] not in skip[author]) and int(row[author]) == ratingMode[author][1]:
                     again = 1
-                    ratingMode[author][0] = row['film']
+                    ratingMode[author] = row['film']
                     await botsay(f"{string.capwords(author)}, how do you rate {string.capwords(row['film'])}?", channel)
                     break
         if again == 0:
