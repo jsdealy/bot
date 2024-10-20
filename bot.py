@@ -16,6 +16,7 @@ from modz.lunaSearch import lsIMDb
 from modz.botsay import botsay, botsaylist
 from modz.memberSeenAndPick import memberSeenAndPick
 from modz.buttonTest import buttonTest
+from modz.randomChooser import randomChooser
 import os
 import discord
 from dotenv import load_dotenv
@@ -67,7 +68,7 @@ async def on_message(message):
     guild = message.guild
     author = message.author
     channel = message.channel
-    mess = message.content.lower()
+    mess: str = message.content.lower()
     sm = mess.split()
     await test(message)
     await gptRec(message)
@@ -83,5 +84,7 @@ async def on_message(message):
     await pickSystem(author, members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs)
     await displayStats(mess, botsay, channel)
     await lsIMDb(mess, message, imdbdb, tryprint, botsay, botsaylist, channel)
+    if mess.startswith("choose:"):
+        await randomChooser(message.content, channel)
     
 client.run(TOKEN)
