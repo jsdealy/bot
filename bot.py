@@ -35,7 +35,7 @@ def tryprint(str):
 
 
 imdbdb = []
-readIMDb(imdbdb)
+# readIMDb(imdbdb)
 
 def retIndexTwo(lst):
     return lst[1]
