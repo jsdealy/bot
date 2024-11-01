@@ -23,7 +23,7 @@ async def memberSeen(membername: str, botsayer: Botsay):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT film_name, rating FROM Films, Members, Ratings WHERE Films.id = Ratings.film_id AND \
-        Members.id = Ratings.user_id AND rating > 0 AND Members.name LIKE ? ORDER BY rating;", (wildcardWrapForLIKE(membername),))
+        Members.id = Ratings.user_id AND rating > -1 AND Members.name LIKE ? ORDER BY rating;", (wildcardWrapForLIKE(membername),))
     film_names_and_ratings_raw = res.fetchall() 
     con.close()
     length_of_returned_table = len(film_names_and_ratings_raw)
