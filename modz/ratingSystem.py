@@ -50,6 +50,7 @@ def _rateFilm(film_id: int, user_id: int, rating: int):
     cur = con.cursor()
     res = cur.execute("SELECT user_id FROM Ratings WHERE film_id = ?", (film_id,))
     resultList = res.fetchall()
+
     if len(resultList) > 0:
         cur.execute("UPDATE Ratings SET rating = ?, date = ? WHERE film_id = ? AND user_id = ?;", (rating,today(),film_id,user_id,))
         con.commit()
@@ -177,7 +178,7 @@ async def rateModeStart(ratemode: RateMode,
     resultList = res.fetchall()
     con.close()
     if len(resultList) > 0:
-        ratemode[author] = {"films": []}
+        ratemode[author] = _membersRateMode()
         for tup in resultList:
             ratemode[author].films.append(tup[0])
         ratemode[author].nowrating = ratemode[author].films.pop()

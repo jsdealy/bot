@@ -11,7 +11,7 @@ from modz.userLists import modList
 from modz.luna import askLuna
 from modz.roleManip import correctRoles
 from modz.checkRotation import checkRotation
-from modz.ratingSystem import rateModeStart,rateModeContinue
+from modz.ratingSystem import rateModeStart,rateModeContinue,RateMode
 from modz.pickSystem import pickSystem
 from modz.displayStats import displayStats
 from modz.lunaSearch import lsIMDb
@@ -35,7 +35,7 @@ def tryprint(str):
         doNothin()
     return
 
-ratemode: dict[str,dict[str,Any]] = {}
+ratemode = RateMode()
 
 # imdbdb = []
 # readIMDb(imdbdb)
