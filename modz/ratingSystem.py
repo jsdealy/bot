@@ -67,7 +67,7 @@ async def rateFilm(author: str,
     filmAndRate = mess.removeprefix('rate:').strip()
     film = filmAndRate[:filmAndRate.rfind(":")].strip()
     ratestring = filmAndRate[filmAndRate.rfind(":"):].removeprefix(":").strip().lower()
-    rating = 1
+    rating = 0
     match ratestring:
         case "x": rating  = -1
         case "n": rating  = 0
@@ -84,8 +84,10 @@ async def rateFilm(author: str,
         case "a-": rating = 11
         case "a": rating  = 12
         case "a+": rating = 13
-        case _: response = "Please use a letter grade (A+, B-, etc.). You can give it 'N' for" \
-                " 'no rating'. If you haven't seen it please use 'X'."  
+        case _: 
+            await botsayer.say("Please use a letter grade (A+, B-, etc.). You can give it 'N' for" \
+                " 'no rating'. If you haven't seen it please use 'X'.")
+            return
     # send the rating to the database
     try:
         film_id = getFilmID(film)
@@ -94,7 +96,7 @@ async def rateFilm(author: str,
     except Exception as e:
         await botsayer.say(f"Error: {e}")
         tryprint(f"Error: {e}")
-        return
+        raise e
     tryprint("Film data updated with a new rating.")
     await botsayer.say(f"{author.title()} has given {string.capwords(film)}"\
                 f" a rating of {numToRating(rating).title()}.")

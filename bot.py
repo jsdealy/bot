@@ -11,7 +11,7 @@ from modz.userLists import modList
 from modz.luna import askLuna
 from modz.roleManip import correctRoles
 from modz.checkRotation import checkRotation
-from modz.ratingSystem import rateModeStart,rateModeContinue,RateMode
+from modz.ratingSystem import rateModeStart,rateModeContinue,RateMode,rateFilm
 from modz.pickSystem import pickSystem
 from modz.displayStats import displayStats
 from modz.lunaSearch import lsIMDb
@@ -21,8 +21,6 @@ from modz.buttonTest import buttonTest
 import os
 import discord
 from dotenv import load_dotenv
-
-
 
 attendees = members
 
@@ -56,8 +54,6 @@ client = discord.Client(intents=discord.Intents.all())
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
 
-print(memberIDs)
-
 ##########################
 #  On_message Reactions  #
 ##########################
@@ -86,6 +82,8 @@ async def on_message(message: discord.Message):
     await correctRoles(mess, botsay, tryprint, guild, memberIDs, members)
     await siteSearch(mess, botsay, channel)
     await checkRotation(mess, members, botsay, tryprint, channel)
+    if mess.startswith("rate"):
+        await rateFilm("louis",mess,botsayer.setChannel(channel),tryprint)
     if mess.startswith("ratemode"):
         # await rateMode(ratemode,nameconvert(message.author.name),mess,botsay,tryprint,channel)
         await rateModeStart(ratemode,"louis",botsayer.setChannel(channel),tryprint)
