@@ -3,6 +3,8 @@ import csv, string
 from .numToRating import numToRating
 from .queue import Queue
 import re
+from .botsay import Botsay
+import sqlite3
 
 cutoffForLeaderboard = 1
 
@@ -32,20 +34,41 @@ def getFilmScores(rawfilms, scoredfilms):
             'patrick': int(rawfilmdict['patrick'])
             } ]
 
+def intToDateString(i: int) -> str:
+    day = i % 100
+    month = int((i % 10000)/100)
+    month_str = ""
+    year = int(i/100000)
+    match month:
+        case 1: month_str = "January"
+        case 2: month_str = "February"
+        case 3: month_str = "March"
+        case 4: month_str = "April"
+        case 5: month_str = "May"
+        case 6: month_str = "June"
+        case 7: month_str = "July"
+        case 8: month_str = "August"
+        case 9: month_str = "September"
+        case 10: month_str = "October"
+        case 11: month_str = "November"
+        case 12: month_str = "December"
+        case _: month_str = "Unknown"
+    return f"{month_str} {day}, {year}"
 
-async def displayStats(mess, botsay, channel):
 
     # Printing the last five films 
-    if mess.startswith("lastfive"):
-        with open("filmdata.csv", "r") as rob:
-            reader = csv.reader(rob)
-            listOfFive = Queue(5)
-            for row in reader:
-                listOfFive.push(f"{string.capwords(row[0])}, picked by {row[1].title()}.\n")
-        response = "The Last Five Picks:\n\n"
-        for elem in listOfFive:
-            response += elem
-        await botsay(response, channel)
+async def lastFive(botsayer: Botsay):
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT film_name, name, date FROM Members, Films, Pickers WHERE Films.id = Pickers.film_id AND Members.id = Pickers.user_id ORDER BY Pickers.id DESC LIMIT 5;")
+    films_raw = res.fetchall()
+    con.close()
+    films = "**Last Five Picks**\n"
+    films = films + '\n'.join(list(f"{string.capwords(x[0])} picked by {string.capwords(x[1])} on {(lambda x: "begining of time" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
+    await botsayer.say(films)
+    
+
+async def displayStats(mess, botsay, channel):
 
     # 08/06/23 10:06:26 => printing a top ten --- dirty, code overlap with leaderboard! # 
     if mess == "topten!":
