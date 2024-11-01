@@ -1,4 +1,4 @@
-def nameconvert(name: str):
+def nameconvert(name: str) -> str:
     if name.startswith("lgularte"):
         return "louis"
     if name.startswith("patrickcamp"):
@@ -8,4 +8,4 @@ def nameconvert(name: str):
     if name.startswith("jdealy"):
         return "justin"
     else:
-        return name.lower
+        return name.lower()

@@ -1,4 +1,5 @@
 # bot.py
+from typing import Any
 from modz.readIMDb import readIMDb
 from modz.nameconvert import nameconvert
 from modz.websearch import siteSearch
@@ -10,11 +11,11 @@ from modz.userLists import modList
 from modz.luna import askLuna
 from modz.roleManip import correctRoles
 from modz.checkRotation import checkRotation
-from modz.ratingSystem import rateSystem
+from modz.ratingSystem import rateModeStart,rateModeContinue
 from modz.pickSystem import pickSystem
 from modz.displayStats import displayStats
 from modz.lunaSearch import lsIMDb
-from modz.botsay import botsay, botsaylist
+from modz.botsay import botsay, botsaylist, Botsay
 from modz.memberSeenAndPick import memberSeenAndPick
 from modz.buttonTest import buttonTest
 import os
@@ -25,7 +26,7 @@ from dotenv import load_dotenv
 
 attendees = members
 
-
+botsayer = Botsay()
 
 def tryprint(str):
     try: 
@@ -34,6 +35,7 @@ def tryprint(str):
         doNothin()
     return
 
+ratemode: dict[str,dict[str,Any]] = {}
 
 # imdbdb = []
 # readIMDb(imdbdb)
@@ -72,6 +74,8 @@ async def on_message(message: discord.Message):
     channel = message.channel
     mess = message.content.lower()
     sm = mess.split()
+    if "louis" in ratemode.keys():
+        await rateModeContinue(ratemode,"louis",mess,botsayer.setChannel(channel),tryprint)
     await test(message)
     await gptRec(message)
     await buttonTest(message)
@@ -82,7 +86,9 @@ async def on_message(message: discord.Message):
     await correctRoles(mess, botsay, tryprint, guild, memberIDs, members)
     await siteSearch(mess, botsay, channel)
     await checkRotation(mess, members, botsay, tryprint, channel)
-    await rateSystem(author, mess, usernames, members, botsay, fieldnames, tryprint, channel)
+    if mess.startswith("ratemode"):
+        # await rateMode(ratemode,nameconvert(message.author.name),mess,botsay,tryprint,channel)
+        await rateModeStart(ratemode,"louis",botsayer.setChannel(channel),tryprint)
     await pickSystem(nameconvert(message.author.name), members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs)
     await displayStats(mess, botsay, channel)
     # await lsIMDb(mess, message, imdbdb, tryprint, botsay, botsaylist, channel)

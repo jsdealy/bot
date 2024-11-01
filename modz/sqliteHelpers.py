@@ -17,21 +17,32 @@ def getFilmsLIKE(s: str):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT film_name FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.lower()),))
+    films = res.fetchall()
     con.close()
-    return res.fetchall()
+    return films
 
-def getFilmID(s: str) -> list[tuple[int]]:
+def getFilmIDs(s: str) -> list[tuple[int]]:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT id FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.lower()),))
+    film_ids = res.fetchall() 
     con.close()
-    return res.fetchall()
+    return film_ids
+
+def getFilmID(s: str) -> int:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT id FROM Films WHERE film_name = ?;", (s.lower(),))
+    film_id = res.fetchall()[0][0]
+    con.close()
+    return film_id
 
 def getUserID(s: str) -> int:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(s.lower()),))
+    user_id = res.fetchone()[0]
     con.close()
-    return res.fetchone()[0]
+    return user_id
 
     
