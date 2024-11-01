@@ -13,6 +13,18 @@ def wildcardWrapForLIKE(s: str):
 def today():
     return int(datetime.today().strftime("%Y%m%d"))
 
+def getMembers() -> list[str]:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT name FROM Members;")
+    names_raw = res.fetchall()
+    con.close()
+    if len(names_raw) > 0:
+        return list(x[0] for x in names_raw)
+    else:
+        raise Exception("Problem getting members!")
+
+
 def getFilmsLIKE(s: str):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()

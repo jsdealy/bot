@@ -3,7 +3,7 @@ from typing import Any
 from modz.readIMDb import readIMDb
 from modz.nameconvert import nameconvert
 from modz.websearch import siteSearch
-from modz.members import members, usernames, fieldnames, memberIDs
+from modz.members import usernames, fieldnames, memberIDs
 from modz.test import test
 from modz.gptRec import gptRec
 from modz.help import help
@@ -16,11 +16,14 @@ from modz.pickSystem import pickSystem
 from modz.displayStats import displayStats
 from modz.lunaSearch import lsIMDb
 from modz.botsay import botsay, botsaylist, Botsay
-from modz.memberSeenAndPick import memberSeenAndPick
+from modz.memberSeenAndPick import memberSeen
+from modz.sqliteHelpers import getMembers
 from modz.buttonTest import buttonTest
 import os
 import discord
 from dotenv import load_dotenv
+
+members = getMembers()
 
 attendees = members
 
@@ -65,28 +68,27 @@ async def on_message(message: discord.Message):
         return
     guild = message.guild
     author = message.author
-    tryprint("a post from:")
-    tryprint(nameconvert(message.author.name))
     channel = message.channel
     mess = message.content.lower()
     sm = mess.split()
-    if "louis" in ratemode.keys():
-        await rateModeContinue(ratemode,"louis",mess,botsayer.setChannel(channel),tryprint)
     await test(message)
     await gptRec(message)
     await buttonTest(message)
     await help(message)
     await modList(mess, author, tryprint, botsay, channel)
     await askLuna(sm, author, usernames, mess, botsay)
-    await memberSeenAndPick(mess, botsay, channel)
     await correctRoles(mess, botsay, tryprint, guild, memberIDs, members)
     await siteSearch(mess, botsay, channel)
     await checkRotation(mess, members, botsay, tryprint, channel)
+    if message.author.name in ratemode.keys():
+        await rateModeContinue(ratemode,nameconvert(message.author.name),mess,botsayer.setChannel(channel),tryprint)
     if mess.startswith("rate"):
-        await rateFilm("louis",mess,botsayer.setChannel(channel),tryprint)
+        await rateFilm(nameconvert(message.author.name),mess,botsayer.setChannel(channel),tryprint)
     if mess.startswith("ratemode"):
-        # await rateMode(ratemode,nameconvert(message.author.name),mess,botsay,tryprint,channel)
-        await rateModeStart(ratemode,"louis",botsayer.setChannel(channel),tryprint)
+        await rateModeStart(ratemode,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
+    for member in members:
+        if mess.startswith(f"{member}seen"):
+            await memberSeen(member, botsayer.setChannel(channel))
     await pickSystem(nameconvert(message.author.name), members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs)
     await displayStats(mess, botsay, channel)
     # await lsIMDb(mess, message, imdbdb, tryprint, botsay, botsaylist, channel)
