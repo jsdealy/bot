@@ -140,9 +140,9 @@ async def rateModeContinue(ratemode: RateMode,
 
     # rating variable is set <== 10/26/24 09:06:26 # 
     if rating != Ratings.SKIP.value:
-        film_id = getFilmID(ratemode[author].nowrating)
-        user_id = getUserID(author)
         try:
+            film_id = getFilmID(ratemode[author].nowrating)
+            user_id = getUserID(author)
             _rateFilm(film_id,user_id,rating)
         except Exception as e:
             await botsayer.say(f"Error: {e}")
