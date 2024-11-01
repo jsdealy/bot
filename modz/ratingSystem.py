@@ -204,31 +204,3 @@ async def rateModeStart(ratemode: RateMode,
     #         if members[i] not in ratingMode.keys() or ratingMode[members[i]] == 0:
     #             await botsay(f"You've seen it all, {string.capwords(members[i])}!\n", channel)
 
-# async def rateSystem(author, mess, botsay, tryprint, channel):
-    # # ratings mode!
-    # if author in ratingMode.keys() and ratingMode[author] != 0:
-    #     again = 0
-    #     if rating == -1:
-    #         if author not in skip.keys():
-    #             skip[author] = [ratingMode[author][0]]
-    #         else:
-    #             skip[author] += [ratingMode[author][0]]
-        
-    #     with open("filmdata.csv", "r") as rob:
-    #         reader = csv.DictReader(rob)
-    #         for row in reader:
-    #             if (author not in skip.keys() or row['film'] not in skip[author]) and int(row[author]) == ratingMode[author][1]:
-    #                 again = 1
-    #                 ratingMode[author] = row['film']
-    #                 await botsay(f"{string.capwords(author)}, how do you rate {string.capwords(row['film'])}?", channel)
-    #                 break
-    #     if again == 0:
-    #         ratingMode[author] = 0
-    #         skip[author] = []
-    #         await botsay("Rating mode finished.", channel)
-
-
-
-    # rate "unseen" mode! 
-
-    # rate a movie
