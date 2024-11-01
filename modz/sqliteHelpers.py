@@ -1,4 +1,4 @@
-import sqlite3
+import sqlite3,string
 from datetime import datetime
 
 def filmIDSelectSkeleton():
@@ -16,7 +16,7 @@ def today():
 def getFilmsLIKE(s: str):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT film_name FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s[:s.find("'")].lower()),))
+    res = cur.execute("SELECT film_name FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.replace("'",'%').lower()),))
     films = res.fetchall()
     con.close()
     return films
@@ -24,7 +24,7 @@ def getFilmsLIKE(s: str):
 def getFilmIDs(s: str) -> list[tuple[int]]:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT id FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s[:s.find("'")].lower()),))
+    res = cur.execute("SELECT id FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.replace("'",'%').lower()),))
     film_ids = res.fetchall() 
     con.close()
     return film_ids
@@ -32,14 +32,14 @@ def getFilmIDs(s: str) -> list[tuple[int]]:
 def getFilmID(s: str) -> int:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT id FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s[:s.find("'")].lower()),))
+    res = cur.execute("SELECT id FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.replace("'",'%').lower()),))
     film_ids = res.fetchall()
     con.close()
     if len(film_ids) > 0:
         film_id = film_ids[0][0]
         return film_id
     else:
-        raise Exception("Film not found.")
+        raise Exception(f"Film '{string.capwords(s)}' not found in database.")
 
 def getUserID(s: str) -> int:
     con = sqlite3.connect("filmdata.db")
