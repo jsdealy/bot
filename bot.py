@@ -42,9 +42,6 @@ ratemode = RateMode()
 # imdbdb = []
 # readIMDb(imdbdb)
 
-def retIndexTwo(lst):
-    return lst[1]
-
 def doNothin():
     return
 
