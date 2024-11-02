@@ -5,6 +5,7 @@ from .queue import Queue
 import re
 from .botsay import Botsay
 import sqlite3
+from statistics import mean
 
 cutoffForLeaderboard = 1
 
@@ -14,6 +15,7 @@ def getFilmDicts(rawfilms):
         count = 0
         for row in reader:
             rawfilms += [row]
+
 
 def getFilmScores(rawfilms, scoredfilms):
     for rawfilmdict in rawfilms:
@@ -34,11 +36,12 @@ def getFilmScores(rawfilms, scoredfilms):
             'patrick': int(rawfilmdict['patrick'])
             } ]
 
+
 def intToDateString(i: int) -> str:
     day = i % 100
     month = int((i % 10000)/100)
     month_str = ""
-    year = int(i/100000)
+    year = int(i/10000)
     match month:
         case 1: month_str = "January"
         case 2: month_str = "February"
@@ -56,17 +59,55 @@ def intToDateString(i: int) -> str:
     return f"{month_str} {day}, {year}"
 
 
-    # Printing the last five films 
+# Printing the last five films 
 async def lastFive(botsayer: Botsay):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT film_name, name, date FROM Members, Films, Pickers WHERE Films.id = Pickers.film_id AND Members.id = Pickers.user_id ORDER BY Pickers.id DESC LIMIT 5;")
     films_raw = res.fetchall()
     con.close()
+    count = 1
     films = "**Last Five Picks**\n"
-    films = films + '\n'.join(list(f"{string.capwords(x[0])} picked by {string.capwords(x[1])} on {(lambda x: "begining of time" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
+    films = films + '\n'.join(list(f"{string.capwords(x[0])} picked by {string.capwords(x[1])} on {(lambda x: "beginning of time" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
     await botsayer.say(films)
     
+async def leaderboard(botsayer: Botsay):
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT film_name, rating FROM Films, Ratings WHERE Films.id = Ratings.film_id AND Ratings.rating > 0;")
+    film_rating_raw = res.fetchall()
+    con.close()
+    data: dict[str,list[int]] = {}
+    for film_rating_tup in film_rating_raw:
+        try: 
+            data[film_rating_tup[0]].append(film_rating_tup[1])
+        except:
+            data[film_rating_tup[0]] = [film_rating_tup[1]]
+    data_list = [[x,round(mean(data[x]),2)] for x in data.keys() if len(data[x]) > 2]
+    data_list.sort(key=lambda x: x[1], reverse=True)
+    group_num = 1
+    group_score = data_list[0][1]
+    group_seeker = group_score
+    row_index = 0
+    superbreak_off = True
+    while superbreak_off:
+        message = f"Tier {group_num}, Score: {numToRating(round(group_score,0))}"
+        while group_seeker == group_score:
+            try:
+                message += '\n ' + string.capwords(data_list[row_index][0])
+                row_index += 1
+                group_seeker = data_list[row_index][1]
+            except:
+                print(message)
+                print("Done")
+                superbreak_off = False
+        print(message)
+        await botsayer.say(message)
+        message = ""
+        group_num += 1
+        group_score = group_seeker
+
+
 
 async def displayStats(mess, botsay, channel):
 
@@ -147,84 +188,6 @@ async def displayStats(mess, botsay, channel):
         await botsay(response, channel)
 
     # print an aggregate ranking of the best movies
-    if mess.startswith("leaderboard"):
-        matchObject = re.match(r"leaderboard([\d]+)", mess)
-        if matchObject:
-            cutoffForLeaderboard = int(matchObject.group(1))
-        else:
-            cutoffForLeaderboard = 2
-        csv.register_dialect
-
-        rawfilms = []
-        scoredfilms = []
-        getFilmDicts(rawfilms)
-        getFilmScores(rawfilms, scoredfilms)
-
-
-        # sorting film dicts by score <= 12/03/23 16:25:59 # 
-        scoredfilms = sorted(scoredfilms, key=lambda x: x['score'], reverse=True)
-        response = f"\n\n{'='*2*len('LEADERBOARD')}\n**Film Club Leaderboard**\n{'='*2*len('LEADERBOARD')}\n"
-        rank = 0
-        count = 0
-        prevscore = 0
-        # first number = total score points, second number = number of scores
-        memberscores = {"justin": [0, 0], "louis": [0, 0], "tim": [0, 0], "patrick": [0, 0]}
-
-        # building text response
-        if cutoffForLeaderboard > 4 or cutoffForLeaderboard < 1:
-            await botsay("Bad cutoff!")
-            return
-
-        for filmdict in scoredfilms: 
-
-            # if there is more than one rating
-            if filmdict['ratings'] >= cutoffForLeaderboard:
-
-                #### storing some memberscore stuff for later
-                memberscores[filmdict['picker']][0] += filmdict['score']
-                # incrementing the number of films
-                memberscores[filmdict['picker']][1] += 1
-                ####
-
-                # turning the score average into a percentage out of 100 & assigning an average grade
-                # storing response
-                score = round((filmdict['score']-1)*100/12, 2)
-                if prevscore != score: 
-                    rank += 1
-                response += f"{'TIE ' if prevscore == score else ''}{rank}. **{string.capwords(filmdict['film'])}**" \
-                        f" ({score}%, {numToRating(int(filmdict['score'])).upper()}, " \
-                        f"{filmdict['picker'].title()})\n"
-                prevscore = score
-                count += 1
-
-            if count == 14: 
-                await botsay(response, channel)
-                count = 0
-                response = ""
-
-        await botsay(response, channel)
-        await botsay("\nRanking ignores NoRating scores and films with only one rating.", channel)
-
-        # now doing member averages
-        response = "```\nMEMBER AVERAGES\n\n"
-        memberrank = []
-        for member in memberscores:
-            score = memberscores[member][0]/memberscores[member][1]
-            memberrank += [[member, round((score-1)*100/12, 2), int(score), memberscores[member][1]]]
-        memberrank = sorted(memberrank, key=lambda x: x[1], reverse=True)
-        maxlen = 0
-        for row in memberrank:
-            if len(f"{row[0].title()}: {numToRating(row[2]).upper()}") > maxlen:
-                maxlen = len(f"{row[0].title()}: {numToRating(row[2]).upper()}")  
-        for row in memberrank:
-            lenname = len(f"{row[0].title()}: {numToRating(row[2]).upper()}")
-            response += f"{row[0].title()}: {numToRating(row[2]).upper()}" 
-            response += " "*(maxlen-lenname) 
-            response += f"  {row[1]}% approval\n" 
-            response += " "*maxlen
-            response += f"  for {row[3]} films\n\n" 
-        response += "\n```"
-        await botsay(response, channel)
 
     if mess == "bias!":
         rawfilms = []

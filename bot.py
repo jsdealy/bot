@@ -13,7 +13,7 @@ from modz.roleManip import correctRoles
 from modz.checkRotation import checkRotation
 from modz.ratingSystem import rateModeStart,rateModeContinue,RateMode,rateFilm
 from modz.pickSystem import pickSystem
-from modz.displayStats import displayStats, lastFive
+from modz.displayStats import displayStats, lastFive, leaderboard
 from modz.lunaSearch import lsIMDb
 from modz.botsay import botsay, botsaylist, Botsay
 from modz.memberSeenAndPick import memberSeen
@@ -89,6 +89,8 @@ async def on_message(message: discord.Message):
             await memberSeen(member, botsayer.setChannel(channel))
     if mess.startswith("lastfive"):
         await lastFive(botsayer.setChannel(channel))
+    if mess.startswith("leaderboard"):
+        await leaderboard(botsayer.setChannel(channel))
     await pickSystem(nameconvert(message.author.name), members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs)
     await displayStats(mess, botsay, channel)
     if mess.startswith("choose:"):
