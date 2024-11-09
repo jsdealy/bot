@@ -1,3 +1,5 @@
 .basicbackups
 .env
 *.tsv
+modz/__pycache__/*
+modz/__pycache__
