@@ -73,8 +73,8 @@ async def lastFive(botsayer: Botsay):
             return self._count
     counter = Counter()
     films = "**Last Five Picks**\n"
-    films = films + '\n'.join(list(f"{counter.count(x)}. {string.capwords(x[0])} picked by {string.capwords(x[1])} on \
-{(lambda x: "the beginning of time" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
+    films = films + '\n'.join(list(f"{counter.count(x)}. {string.capwords(x[0])} :film_frames: picked by {string.capwords(x[1])} on \
+{(lambda x: "the day time began" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
     await botsayer.say(textwrap.dedent(films))
     
 async def leaderboard(botsayer: Botsay):
