@@ -10,9 +10,10 @@ ratingMode ={}
 skip = {}
 
 class _membersRateMode:
-    def __init__(self):
+    def __init__(self, name):
         self.films: list[str] = []
         self.nowrating: str = ""
+        self.membername: str = name
     def done(self) -> bool:
         return len(self.films) == 0
 
@@ -156,7 +157,7 @@ async def rateModeContinue(ratemode: RateMode,
 
         # issue new ratemode prompt and update ratemode dict <== 10/26/24 08:58:21 # 
         if ratemode[author].done():
-            await botsayer.say("Ratemode finished! :pregnant_man:")
+            await botsayer.say(f"Ratemode for {string.capwords(ratemode.pop(author).membername)} is finished! :pregnant_man:")
         else:
             ratemode[author].nowrating = ratemode[author].films.pop()
             await botsayer.say(f"Okay {string.capwords(author)}, how do you rate {string.capwords(ratemode[author].nowrating)}?")
@@ -164,30 +165,45 @@ async def rateModeContinue(ratemode: RateMode,
 
 # ratings mode! 
 async def rateModeStart(ratemode: RateMode,
+                        rateunseen: bool,
                         author: str, 
                         botsayer: Botsay, tryprint):
     if author in ratemode.keys():
         await botsayer.say(f"Ratemode is already underway for you, {string.capwords(author)}!")
         return
-    await botsayer.say("Ratemode!")
+    if rateunseen:
+        await botsayer.say("Time to rate the unseen... Hoooo, doggy, what delight! :dog:")
+    else:
+        await botsayer.say("Ratemode!")
     # get films user hasn't seen; these are the ones with rating = 0 <== 10/25/24 13:51:36 # 
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute(f"SELECT Films.film_name FROM Films,Ratings,Members WHERE Films.id = Ratings.film_id \
+    sql_string = ""
+    if rateunseen:
+        sql_string = "SELECT Films.film_name FROM Films,Ratings,Members WHERE Films.id = Ratings.film_id \
         AND Members.id = Ratings.user_id \
         AND Members.name LIKE ? \
-        AND rating = 0;", (wildcardWrapForLIKE(author),))
+        AND rating = -1;"
+    else:
+        sql_string = "SELECT Films.film_name FROM Films,Ratings,Members WHERE Films.id = Ratings.film_id \
+        AND Members.id = Ratings.user_id \
+        AND Members.name LIKE ? \
+        AND rating = 0;"
+    res = cur.execute(sql_string, (wildcardWrapForLIKE(author),))
     resultList = res.fetchall()
     con.close()
     if len(resultList) > 0:
-        ratemode[author] = _membersRateMode()
+        ratemode[author] = _membersRateMode(author)
         for tup in resultList:
             ratemode[author].films.append(tup[0])
         ratemode[author].nowrating = ratemode[author].films.pop()
         tryprint(ratemode)
         await botsayer.say(f"Okay {string.capwords(author)}, how do you rate {string.capwords(ratemode[author].nowrating)}?")
     else:
-        await botsayer.say("You've rated everything you've seen! Maybe try rateunseen... :pregnant_man:")
+        if rateunseen:
+            await botsayer.say("Ain't no unrated unseen! Hoooweeeee! :pregnant_man:")
+        else:
+            await botsayer.say("You've rated everything you've seen! Maybe try rateunseen... :pregnant_man:")
         if author in ratemode.keys():
             ratemode.pop(author)
             return

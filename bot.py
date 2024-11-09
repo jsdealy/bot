@@ -78,12 +78,14 @@ async def on_message(message: discord.Message):
     await correctRoles(mess, botsay, tryprint, guild, memberIDs, members)
     await siteSearch(mess, botsay, channel)
     await checkRotation(mess, members, botsay, tryprint, channel)
-    if message.author.name in ratemode.keys():
+    if nameconvert(message.author.name) in ratemode.keys():
         await rateModeContinue(ratemode,nameconvert(message.author.name),mess,botsayer.setChannel(channel),tryprint)
-    if mess.startswith("rate"):
+    if mess.startswith("rate:"):
         await rateFilm(nameconvert(message.author.name),mess,botsayer.setChannel(channel),tryprint)
     if mess.startswith("ratemode"):
-        await rateModeStart(ratemode,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
+        await rateModeStart(ratemode,False,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
+    if mess.startswith("rateunseen"):
+        await rateModeStart(ratemode,True,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
     for member in members:
         if mess.startswith(f"{member}seen"):
             await memberSeen(member, botsayer.setChannel(channel))

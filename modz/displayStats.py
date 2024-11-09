@@ -1,5 +1,5 @@
 import re
-import csv, string
+import csv, string, textwrap
 from .numToRating import numToRating
 from .queue import Queue
 import re
@@ -66,10 +66,16 @@ async def lastFive(botsayer: Botsay):
     res = cur.execute("SELECT film_name, name, date FROM Members, Films, Pickers WHERE Films.id = Pickers.film_id AND Members.id = Pickers.user_id ORDER BY Pickers.id DESC LIMIT 5;")
     films_raw = res.fetchall()
     con.close()
-    count = 1
+    class Counter:
+        _count = 0
+        def count(self, something):
+            self._count += 1
+            return self._count
+    counter = Counter()
     films = "**Last Five Picks**\n"
-    films = films + '\n'.join(list(f"{string.capwords(x[0])} picked by {string.capwords(x[1])} on {(lambda x: "beginning of time" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
-    await botsayer.say(films)
+    films = films + '\n'.join(list(f"{counter.count(x)}. {string.capwords(x[0])} picked by {string.capwords(x[1])} on \
+{(lambda x: "the beginning of time" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
+    await botsayer.say(textwrap.dedent(films))
     
 async def leaderboard(botsayer: Botsay):
     con = sqlite3.connect("filmdata.db")
@@ -84,28 +90,48 @@ async def leaderboard(botsayer: Botsay):
         except:
             data[film_rating_tup[0]] = [film_rating_tup[1]]
     data_list = [[x,round(mean(data[x]),2)] for x in data.keys() if len(data[x]) > 2]
-    data_list.sort(key=lambda x: x[1], reverse=True)
+    data_list.sort(key=lambda x: x[1])
+    class TierCounter:
+        _tierscore = 0
+        _tiercount = 0
+        def input(self, score):
+            if score == self._tierscore:
+                return
+            else:
+                self._tierscore = score
+                self._tiercount += 1
+        def gettotal(self):
+            return self._tiercount
+    tiercounter = TierCounter()
+    for film_score in data_list:
+        tiercounter.input(film_score[1])
     group_num = 1
     group_score = data_list[0][1]
     group_seeker = group_score
     row_index = 0
     superbreak_off = True
-    while superbreak_off:
-        message = f"Tier {group_num}, Score: {numToRating(round(group_score,0))}"
-        while group_seeker == group_score:
+    while True:
+        message = f"Tier {tiercounter.gettotal() - group_num + 1}, which is in Bracket {numToRating(round(group_score,0))}"
+        while superbreak_off and group_seeker == group_score:
             try:
                 message += '\n ' + string.capwords(data_list[row_index][0])
                 row_index += 1
                 group_seeker = data_list[row_index][1]
             except:
+                await botsayer.say(message)
                 print(message)
                 print("Done")
                 superbreak_off = False
-        print(message)
-        await botsayer.say(message)
-        message = ""
-        group_num += 1
-        group_score = group_seeker
+        if superbreak_off:
+            print(message)
+            await botsayer.say(message)
+            message = ""
+            group_num += 1
+            group_score = group_seeker
+        else:
+            break
+    # now doing member averages
+
 
 
 
