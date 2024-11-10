@@ -1,7 +1,5 @@
-import re
 import csv, string, textwrap
 from .numToRating import numToRating
-from .queue import Queue
 import re
 from .botsay import Botsay
 import sqlite3

@@ -41,7 +41,7 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         res = cur.execute("SELECT * FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(film.lower()),))
         result = res.fetchall()
         if len(result) > 0:
-            await botsay(f"Added film data: {film}!", channel)
+            await botsay(f"Added film data: {string.capwords(film)}!", channel)
         else:
             raise Exception(f"Problem adding {film}!")
 
@@ -53,7 +53,7 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         res = cur.execute("SELECT * FROM Pickers WHERE date = ?;", (dateint,))
         result = res.fetchall()
         if len(result) > 0:
-            await botsay(f"Added picker data: {picker.capitalize()} picked {film}! :pregnant_man:", channel)
+            await botsay(f"Added picker data: {picker.capitalize()} picked {string.capwords(film)}! :pregnant_man:", channel)
         else:
             raise Exception(f"Problem adding pick: {film}, {picker}!")
 

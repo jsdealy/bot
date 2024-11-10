@@ -4,7 +4,6 @@ from modz.readIMDb import readIMDb
 from modz.nameconvert import nameconvert
 from modz.websearch import siteSearch
 from modz.members import usernames, fieldnames, memberIDs
-from modz.test import test
 from modz.gptRec import gptRec
 from modz.help import help
 from modz.userLists import modList
@@ -69,7 +68,6 @@ async def on_message(message: discord.Message):
     channel = message.channel
     mess: str = message.content.lower()
     sm = mess.split()
-    await test(message)
     await gptRec(message)
     await buttonTest(message)
     await help(message)
