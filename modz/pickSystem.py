@@ -1,6 +1,8 @@
 import csv, os, string, sqlite3
 from datetime import datetime
 from .updateFile import updateFile
+import mechanicalsoup, re
+
 
 def filmIDSelectSkeleton():
     return "(SELECT id FROM Films WHERE film_name = ?)"
@@ -43,7 +45,48 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         if len(result) > 0:
             await botsay(f"Added film data: {string.capwords(film)}!", channel)
         else:
-            raise Exception(f"Problem adding {film}!")
+            raise Exception(f"Error: problem adding {film}!")
+
+
+        # getting the imdb data <== 11/10/24 10:28:28 # 
+        imdb_code = ""
+        reg = re.compile(r"tt[0-9]+")
+        imdb_url: str = ""
+        try:
+            try:
+                br = mechanicalsoup.StatefulBrowser()
+                br.open("http://google.com")
+                form = br.select_form()
+                form["q"] = f"{film} site:imdb.com"
+                form.choose_submit("btnI")
+                result = br.submit_selected()
+                imdb_url = result.url
+            except Exception as e:
+                await botsay(f"Problem with fetching imdb data!", channel)
+                raise e
+
+            try:
+                match_object = reg.search(imdb_url)
+                if match_object != None:
+                    imdb_code = f"{match_object.group()}"
+            except Exception as e:
+                await botsay(f"Problem with extracting imdb code!", channel)
+                raise e
+            
+            try:
+                cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES ((SELECT id FROM Films WHERE film_name = ?), ?);", (film.lower(),imdb_code))
+                res = cur.execute("SELECT * FROM IMDb_ids WHERE imdb_code = ?;", (imdb_code,))
+                result = res.fetchall()
+                if len(result) > 0:
+                    await botsay(f"Added imdb link: [{string.capwords(film)}](<http://www.imdb.com/title/{imdb_code}>)!", channel)
+                else:
+                    raise Exception(f"Error: problem adding imdb data for {string.capwords(film)}!")
+            except Exception as e:
+                await botsay(f"Problem inserting imdb data into database!", channel)
+                raise e
+
+        except Exception as e:
+            await botsay(f"Error: {e}")
 
 
         # set the picker <== 10/07/24 10:54:55 # 
