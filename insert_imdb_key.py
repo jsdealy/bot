@@ -7,10 +7,12 @@ cur = con.cursor()
 
 try:
     imdb_code = argv[1]
-    print(imdb_code, str.join(' ',argv[2:]).lower())
-    # res = cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES (?, ?)", (film_tup[1],imdb_code,))
-    # con.commit()
-    # print(f"{film_tup[0]}, done")
+    film_name = str.join(' ',argv[2:]).lower()
+    res1 = cur.execute("SELECT id FROM Films WHERE film_name = ?", (film_name,))
+    film_id = list(res1.fetchall())[0][0]
+    res = cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES (?, ?)", (film_id,imdb_code,))
+    con.commit()
+    print(f"{film_name}, done")
 except Exception as e:
     print(f"Error: {e}")
 
