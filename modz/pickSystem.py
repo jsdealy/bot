@@ -47,6 +47,16 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         else:
             raise Exception(f"Error: problem adding {film}!")
 
+        # set the picker <== 10/07/24 10:54:55 # 
+        dateint = int(datetime.today().strftime("%Y%m%d"))
+        cur.execute(f'INSERT INTO Pickers(film_id, user_id, date) VALUES({filmIDSelectSkeleton()},\
+            {memberIDSelectSkeleton()}, ?)', (film.lower(), picker.lower(), dateint,))
+        res = cur.execute("SELECT * FROM Pickers WHERE date = ?;", (dateint,))
+        result = res.fetchall()
+        if len(result) > 0:
+            await botsay(f"Added picker data: {picker.capitalize()} picked {string.capwords(film)}! :pregnant_man:", channel)
+        else:
+            raise Exception(f"Problem adding pick: {film}, {picker}!")
 
         # getting the imdb data <== 11/10/24 10:28:28 # 
         imdb_code = ""
@@ -69,36 +79,27 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
                 match_object = reg.search(imdb_url)
                 if match_object != None:
                     imdb_code = f"{match_object.group()}"
+
+                    try:
+                        cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES ((SELECT id FROM Films WHERE film_name = ?), ?);", (film.lower(),imdb_code))
+                        res = cur.execute("SELECT * FROM IMDb_ids WHERE imdb_id = ?;", (imdb_code,))
+                        result = res.fetchall()
+                        if len(result) > 0:
+                            await botsay(f"Added imdb link: [{string.capwords(film)}](http://www.imdb.com/title/{imdb_code})!", channel)
+                        else:
+                            raise Exception(f"Error: problem adding imdb data for {string.capwords(film)}!")
+                    except Exception as e:
+                        await botsay(f"Problem inserting imdb data into database!", channel)
+                        raise e
+
             except Exception as e:
-                await botsay(f"Problem with extracting imdb code!", channel)
+                await botsay(f"Problem with imdb code!", channel)
                 raise e
             
-            try:
-                cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES ((SELECT id FROM Films WHERE film_name = ?), ?);", (film.lower(),imdb_code))
-                res = cur.execute("SELECT * FROM IMDb_ids WHERE imdb_code = ?;", (imdb_code,))
-                result = res.fetchall()
-                if len(result) > 0:
-                    await botsay(f"Added imdb link: [{string.capwords(film)}](<http://www.imdb.com/title/{imdb_code}>)!", channel)
-                else:
-                    raise Exception(f"Error: problem adding imdb data for {string.capwords(film)}!")
-            except Exception as e:
-                await botsay(f"Problem inserting imdb data into database!", channel)
-                raise e
 
         except Exception as e:
-            await botsay(f"Error: {e}")
+            await botsay(f"Error: {e}", channel)
 
-
-        # set the picker <== 10/07/24 10:54:55 # 
-        dateint = int(datetime.today().strftime("%Y%m%d"))
-        cur.execute(f'INSERT INTO Pickers(film_id, user_id, date) VALUES({filmIDSelectSkeleton()},\
-            {memberIDSelectSkeleton()}, ?)', (film.lower(), picker.lower(), dateint,))
-        res = cur.execute("SELECT * FROM Pickers WHERE date = ?;", (dateint,))
-        result = res.fetchall()
-        if len(result) > 0:
-            await botsay(f"Added picker data: {picker.capitalize()} picked {string.capwords(film)}! :pregnant_man:", channel)
-        else:
-            raise Exception(f"Problem adding pick: {film}, {picker}!")
 
         # committing the changes and closing the connection <== 10/07/24 12:39:04 # 
         con.commit()
@@ -108,10 +109,6 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         await botsay(f"Error: {e}", channel)
         raise e
 
-    # sending a response to the chat
-    # response += f"**{} is now next in line to choose a film.**"
-    # await botsay(response, channel)
-    # await botsay("*All done!* :pregnant_man:", channel)
 
 async def undopick(picker,
                      botsay,
