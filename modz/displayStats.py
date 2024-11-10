@@ -80,15 +80,25 @@ async def leaderboard(botsayer: Botsay):
     cur = con.cursor()
     res = cur.execute("SELECT film_name, rating FROM Films, Ratings WHERE Films.id = Ratings.film_id AND Ratings.rating > 0;")
     film_rating_raw = res.fetchall()
+    res_imdb_search = cur.execute("SELECT Films.film_name, imdb_id FROM Films, IMDb_ids WHERE Films.id = IMDb_ids.film_id;")
+    imdb_rating_raw = res_imdb_search.fetchall()
+    print(film_rating_raw)
+    print(imdb_rating_raw)
     con.close()
-    data: dict[str,list[int]] = {}
+    film_dicts: dict[str,list[int]] = {}
+    imdb_dicts: dict[str,int] = {}
     for film_rating_tup in film_rating_raw:
         try: 
-            data[film_rating_tup[0]].append(film_rating_tup[1])
+            film_dicts[film_rating_tup[0]].append(film_rating_tup[1])
         except:
-            data[film_rating_tup[0]] = [film_rating_tup[1]]
-    data_list = [[x,round(mean(data[x]),2)] for x in data.keys() if len(data[x]) > 2]
-    data_list.sort(key=lambda x: x[1])
+            film_dicts[film_rating_tup[0]] = [film_rating_tup[1]]
+    
+    for imdb_rating_tup in imdb_rating_raw:
+        imdb_dicts[imdb_rating_tup[0]] = imdb_rating_tup[1]
+
+    film_data_list = [[x,round(mean(film_dicts[x]),2)] for x in film_dicts.keys() if len(film_dicts[x]) > 2]
+    film_data_list.sort(key=lambda x: x[1])
+
     class TierCounter:
         _tierscore = 0
         _tiercount = 0
@@ -101,10 +111,12 @@ async def leaderboard(botsayer: Botsay):
         def gettotal(self):
             return self._tiercount
     tiercounter = TierCounter()
-    for film_score in data_list:
+
+    for film_score in film_data_list:
         tiercounter.input(film_score[1])
+
     group_num = 1
-    group_score = data_list[0][1]
+    group_score = film_data_list[0][1]
     group_seeker = group_score
     row_index = 0
     superbreak_off = True
@@ -112,9 +124,12 @@ async def leaderboard(botsayer: Botsay):
         message = f"Tier {tiercounter.gettotal() - group_num + 1}, which is in Bracket {numToRating(round(group_score,0))}"
         while superbreak_off and group_seeker == group_score:
             try:
-                message += '\n ' + string.capwords(data_list[row_index][0])
+                if film_data_list[row_index][0] in imdb_dicts.keys():
+                    message += '\n ' + f"[{string.capwords(film_data_list[row_index][0])}](<http://www.imdb.com/title/{imdb_dicts[film_data_list[row_index][0]]}>)"
+                else:
+                    message += '\n ' + f"{string.capwords(film_data_list[row_index][0])}"
                 row_index += 1
-                group_seeker = data_list[row_index][1]
+                group_seeker = film_data_list[row_index][1]
             except:
                 await botsayer.say(message)
                 print(message)

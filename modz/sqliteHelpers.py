@@ -7,8 +7,11 @@ def filmIDSelectSkeleton():
 def memberIDSelectSkeleton():
     return "(SELECT id FROM Members WHERE name = ?)"
 
-def wildcardWrapForLIKE(s: str):
-    return f'%{s.strip()}%'
+def wildcardWrapForLIKE(s: str | list[str]):
+    if isinstance(s, str):
+        return f'%{s.strip()}%'
+    else:
+        return f'%{"%".join(s)}%'
 
 def today():
     return int(datetime.today().strftime("%Y%m%d"))
