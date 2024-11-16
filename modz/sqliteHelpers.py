@@ -56,6 +56,18 @@ def getFilmID(s: str) -> int:
     else:
         raise Exception(f"Film '{string.capwords(s)}' not found in database.")
 
+def getRating(user_id: int, film_id: int) -> int:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT rating FROM Ratings WHERE film_id = ? AND user_id = ?;", (film_id,user_id,))
+    ratings = res.fetchall()
+    con.close()
+    if len(ratings) > 0:
+        rating = ratings[0][0]
+        return rating
+    else:
+        raise Exception(f"Problem fetching rating for user_id {user_id} and film_id {film_id}.")
+
 def getUserID(s: str) -> int:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()

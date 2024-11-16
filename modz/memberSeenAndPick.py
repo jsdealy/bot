@@ -25,9 +25,14 @@ async def memberSeen(membername: str, botsayer: Botsay):
     res = cur.execute("SELECT film_name, rating FROM Films, Members, Ratings WHERE Films.id = Ratings.film_id AND \
         Members.id = Ratings.user_id AND rating > -1 AND Members.name LIKE ? ORDER BY rating;", (wildcardWrapForLIKE(membername),))
     film_names_and_ratings_raw = res.fetchall() 
+    res = cur.execute("SELECT Films.film_name, imdb_id FROM Films, IMDb_ids WHERE Films.id = IMDb_ids.film_id;")
+    imdb_raw = res.fetchall()
     con.close()
     length_of_returned_table = len(film_names_and_ratings_raw)
     if length_of_returned_table > 0 and len(film_names_and_ratings_raw[0]) > 1:
+        imdb_dicts: dict[str,str] = {}
+        for raw_imdb_tup in imdb_raw:
+            imdb_dicts[raw_imdb_tup[0]] = raw_imdb_tup[1]
         result: str = ""
         rategroup = film_names_and_ratings_raw[0][1]
         rateseek = rategroup
@@ -35,7 +40,10 @@ async def memberSeen(membername: str, botsayer: Botsay):
         while True:
             result = f"**{membername}'s {numToRating(rategroup).capitalize()} Films**\n"
             while row_index < length_of_returned_table and rateseek == rategroup:
-                result = result + f"{string.capwords(film_names_and_ratings_raw[row_index][0])}\n"
+                if film_names_and_ratings_raw[row_index][0] in imdb_dicts.keys():
+                    result = result+f"[{string.capwords(film_names_and_ratings_raw[row_index][0])}](<http://www.imdb.com/title/{imdb_dicts[film_names_and_ratings_raw[row_index][0]]}>)\n"
+                else:
+                    result = result+f"{string.capwords(film_names_and_ratings_raw[row_index][0])}\n"
                 row_index += 1
                 try:
                     rateseek = film_names_and_ratings_raw[row_index][1]

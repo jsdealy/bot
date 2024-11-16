@@ -80,6 +80,9 @@ async def on_message(message: discord.Message):
         await rateModeContinue(ratemode,nameconvert(message.author.name),mess,botsayer.setChannel(channel),tryprint)
     if mess.startswith("rate:"):
         await rateFilm(nameconvert(message.author.name),mess,botsayer.setChannel(channel),tryprint)
+    for member in members:
+        if mess.startswith(f"{member}rate:"):
+            await rateFilm(member,mess,botsayer.setChannel(channel),tryprint)
     if mess.startswith("ratemode"):
         await rateModeStart(ratemode,False,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
     if mess.startswith("rateunseen"):

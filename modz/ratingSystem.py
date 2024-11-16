@@ -1,10 +1,10 @@
-import string, csv, os, sqlite3
+import string, csv, os, sqlite3, re
 from typing import Any
 from enum import Enum
 from .botsay import Botsay
 from datetime import datetime
 from .numToRating import numToRating
-from .sqliteHelpers import memberIDSelectSkeleton,filmIDSelectSkeleton,wildcardWrapForLIKE,getFilmsLIKE,today,getFilmIDs,getUserID,getFilmID
+from .sqliteHelpers import memberIDSelectSkeleton,filmIDSelectSkeleton,wildcardWrapForLIKE,getFilmsLIKE,today,getFilmIDs,getUserID,getFilmID,getRating
 
 ratingMode ={}
 skip = {}
@@ -49,7 +49,7 @@ class Ratings(Enum):
 def _rateFilm(film_id: int, user_id: int, rating: int):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT user_id FROM Ratings WHERE film_id = ?", (film_id,))
+    res = cur.execute("SELECT * FROM Ratings WHERE film_id = ? AND user_id = ?", (film_id,user_id,))
     resultList = res.fetchall()
 
     if len(resultList) > 0:
@@ -65,7 +65,8 @@ async def rateFilm(author: str,
              mess: str,
              botsayer: Botsay,
 			 tryprint):
-    filmAndRate = mess.removeprefix('rate:').strip()
+    reggy = re.compile(r'^[\w]*rate:')
+    filmAndRate = reggy.sub('',mess)
     film = filmAndRate[:filmAndRate.rfind(":")].strip()
     ratestring = filmAndRate[filmAndRate.rfind(":"):].removeprefix(":").strip().lower()
     rating = 0
@@ -98,9 +99,14 @@ async def rateFilm(author: str,
         await botsayer.say(f"Error: {e}")
         tryprint(f"Error: {e}")
         raise e
-    tryprint("Film data updated with a new rating.")
-    await botsayer.say(f"{author.title()} has given {string.capwords(film)}"\
-                f" a rating of {numToRating(rating).title()}.")
+    try: 
+        rating = getRating(user_id,film_id)
+        tryprint(f"User {user_id} has given film {film_id} rating {rating}.")
+        await botsayer.say(f"{author.title()} has given {string.capwords(film)} a rating of {numToRating(rating).title()}.")
+    except Exception as e:
+        tryprint(f"Error: {e}")
+        await botsayer.say(f"Error: {e}")
+        raise e
 
 async def rateModeContinue(ratemode: RateMode,
                            author: str, 
