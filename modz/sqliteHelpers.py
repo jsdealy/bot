@@ -1,7 +1,7 @@
 import sqlite3,string
 from datetime import datetime
-from .botsay import Botsay
-from .newIMDb import addIMDbData
+from botsay import Botsay
+from newIMDb import addIMDbData
 from typing import Any
 
 def filmIDSelectSkeleton():
@@ -32,41 +32,53 @@ def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
     except Exception as e:
         print(f"Error: {e}")
         raise e
-    list_of_equations = [f"{key}={values[key]}" for key in list_of_fields]
-    cur.execute(f"SELECT * FROM {table} WHERE {' AND '.join(list_of_equations)};")
+    list_of_equations = []
+    for field in list_of_fields:
+        if isinstance(values[field],str):
+            list_of_equations.append(f'{field}="{values[field]}"')
+        elif isinstance(values[field],int):
+            list_of_equations.append(f"{field}={values[field]}")
+        else:
+            raise Exception("Trying to insert value of unknown type!")
+    try:
+        cur.execute(f"SELECT * FROM {table} WHERE {' AND '.join(list_of_equations)};")
+    except Exception as e:
+        print(f"query: SELECT * FROM {table} WHERE {' AND '.join(list_of_equations)};")
+        raise e
     if len(cur.fetchall()) < 1:
         print(f"Failed to add {' AND '.join(list_of_equations)} to {table}.")
         return False
     return True
 
-async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
+async def insertIntoUserList(cur: sqlite3.Cursor, user: str, film: str, **kwargs: Botsay) -> None:
+    user = user.lower().strip().strip("\n")
+    film = film.lower().strip().strip("\n")
+    cur.fetchall()
     doprint = False
     botsayer = kwargs.get("botsayer")
     if "botsayer" in kwargs.keys():
         doprint = True
-    con = sqlite3.connect("filmdata.db")
-    cur = con.cursor()
     film_id: int = 0
-    cur.execute("SELECT * FROM Members WHERE name = ?;", (user.lower(),))
+    cur.execute("SELECT * FROM Members WHERE name = ?;", (user,))
     if len(cur.fetchall()) < 1:
-        if insert(cur, "Members", name=user.lower()) and doprint:
+        if insert(cur, "Members", name=user) and doprint:
             print(f"Added member {user}!") 
             await botsayer.say(f"Added member {user}!") 
         else:
             raise Exception(f"Couldn't add member {user}")
-    user_id: int = cur.execute("SELECT id FROM Members WHERE name = ?", (user.lower(),)).fetchall()[0][0]
-    cur.execute("SELECT * FROM Films WHERE film_name = ?;", (film.lower(),))
+    user_id: int = cur.execute("SELECT id FROM Members WHERE name = ?", (user,)).fetchall()[0][0]
+    cur.execute("SELECT * FROM Films WHERE film_name = ?;", (film,))
     if len(cur.fetchall()) < 1:
-        if insert(cur, "Films", film_name=film.lower()):
-            print(f"Added film to database: {film.lower()}!")
+        if insert(cur, "Films", film_name=film):
+            print(f"Added film to database: {film}!")
         else:
-            raise Exception(f"Couldn't add film to database: {film.lower()}")
-        film_id = cur.execute("SELECT id FROM Films WHERE film_name = ?", (film.lower(),)).fetchall()[0][0]
+            raise Exception(f"Couldn't add film to database: {film}")
+        film_id = cur.execute("SELECT id FROM Films WHERE film_name = ?", (film,)).fetchall()[0][0]
         try:
-            addIMDbData(film_id)
+            addIMDbData(cur, film_id)
         except Exception as e:
             raise e
-        print(f"Added IMDb data for {film.lower()}")
+        print(f"Added IMDb data for {film}")
     cur.execute("SELECT * FROM Lists WHERE film_id = ? AND user_id = ?", (film_id, user_id,))
     if len(cur.fetchall()) < 1:
         if insert(cur, "Lists", film_id=film_id, user_id=user_id):
@@ -76,7 +88,6 @@ async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
     elif doprint:
         print(f"{film} is already in {user}'s list!")
         await botsayer.say(f"{film} is already in {user}'s list!")
-    con.close()
 
 def getMembers() -> list[str]:
     con = sqlite3.connect("filmdata.db")
