@@ -73,21 +73,21 @@ async def insertIntoUserList(cur: sqlite3.Cursor, user: str, film: str, **kwargs
             print(f"Added film to database: {film}!")
         else:
             raise Exception(f"Couldn't add film to database: {film}")
-        film_id = cur.execute("SELECT id FROM Films WHERE film_name = ?", (film,)).fetchall()[0][0]
-        try:
-            addIMDbData(cur, film_id)
-        except Exception as e:
-            raise e
-        print(f"Added IMDb data for {film}")
+    film_id = cur.execute("SELECT id FROM Films WHERE film_name = ?", (film,)).fetchall()[0][0]
+    try:
+        addIMDbData(cur, film_id)
+    except Exception as e:
+        print(f"Error: {e}")
     cur.execute("SELECT * FROM Lists WHERE film_id = ? AND user_id = ?", (film_id, user_id,))
     if len(cur.fetchall()) < 1:
         if insert(cur, "Lists", film_id=film_id, user_id=user_id):
             print(f"Added {film} to {user}'s list.")
         else:
             raise Exception(f"Couldn't add {film} to {user}'s list.")
-    elif doprint:
+    else:
+        if doprint:
+            await botsayer.say(f"{film} is already in {user}'s list!")
         print(f"{film} is already in {user}'s list!")
-        await botsayer.say(f"{film} is already in {user}'s list!")
 
 def getMembers() -> list[str]:
     con = sqlite3.connect("filmdata.db")

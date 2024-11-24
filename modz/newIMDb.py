@@ -15,7 +15,7 @@ def addIMDbData(cur: sqlite3.Cursor, film_id: int):
     reg_match = reg.search(response.url)
     try:
         imdb_code = reg_match.group()
-        res = cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES (?, ?)", (film_name,imdb_code,))
+        res = cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES (?, ?)", (film_id,imdb_code,))
         print(f"{film_name}, done")
     except Exception as e:
         print(f"Error: {e}")
