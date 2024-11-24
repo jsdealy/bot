@@ -46,6 +46,25 @@ class Ratings(Enum):
     APLUS = 13
     SKIP = -2
 
+def ratingToInt(rating: str):
+    match rating:
+        case "x":  return -1
+        case "n":  return 0
+        case "f":  return 1
+        case "d-": return 2
+        case "d":  return 3
+        case "d+": return 4
+        case "c-": return 5
+        case "c":  return 6
+        case "c+": return 7
+        case "b-": return 8
+        case "b":  return 9
+        case "b+": return 10
+        case "a-": return 11
+        case "a":  return 12
+        case "a+": return 13
+        case _: raise Exception("Bad rating passed to ratingToInt")
+
 def _rateFilm(film_id: int, user_id: int, rating: int):
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
@@ -61,10 +80,7 @@ def _rateFilm(film_id: int, user_id: int, rating: int):
     con.close()
     return 
 
-async def rateFilm(author: str,
-             mess: str,
-             botsayer: Botsay,
-			 tryprint):
+async def container(mess, botsayer):
     reggy = re.compile(r'^[\w]*rate:')
     filmAndRate = reggy.sub('',mess)
     film = filmAndRate[:filmAndRate.rfind(":")].strip()
@@ -90,22 +106,19 @@ async def rateFilm(author: str,
             await botsayer.say("Please use a letter grade (A+, B-, etc.). You can give it 'N' for" \
                 " 'no rating'. If you haven't seen it please use 'X'.")
             return
+
+async def rateFilm(user: str, film: str, rating: int) -> str:
     # send the rating to the database
     try:
         film_id = getFilmID(film)
-        user_id = getUserID(author)
+        user_id = getUserID(user)
         _rateFilm(film_id,user_id,rating)
     except Exception as e:
-        await botsayer.say(f"Error: {e}")
-        tryprint(f"Error: {e}")
         raise e
     try: 
         rating = getRating(user_id,film_id)
-        tryprint(f"User {user_id} has given film {film_id} rating {rating}.")
-        await botsayer.say(f"{author.title()} has given {string.capwords(film)} a rating of {numToRating(rating).title()}.")
+        return f"{user.title()} has given {string.capwords(film)} a rating of {numToRating(rating).title()}."
     except Exception as e:
-        tryprint(f"Error: {e}")
-        await botsayer.say(f"Error: {e}")
         raise e
 
 async def rateModeContinue(ratemode: RateMode,

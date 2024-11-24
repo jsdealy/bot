@@ -1,6 +1,7 @@
 import csv, os, string, sqlite3
 from datetime import datetime
 from .updateFile import updateFile
+from .botsay import Botsay
 import mechanicalsoup, re
 
 
@@ -13,19 +14,14 @@ def memberIDSelectSkeleton():
 def wildcardWrapForLIKE(s: str):
     return f"%{s.strip()}%"
 
-async def pick(picker: str, film: str, botsay, tryprint, channel):
-    tryprint(film)
+async def pick(picker: str, film: str, botsayer: Botsay) -> str:
     if film == "":
-        await botsay("You didn't pick a film!", channel)
-        return
-
-    await botsay("*Creating a new film entry for the database...*", channel)
+        raise Exception("You didn't pick a film!")
 
     # writing to newfilmdata
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
     try:
-        con = sqlite3.connect("filmdata.db")
-        cur = con.cursor()
-
         # adding a new member if necessary <== 10/07/24 10:20:33 # 
         res = cur.execute("SELECT * FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(picker.lower()),))
         result = res.fetchall()
@@ -34,7 +30,7 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
             res = cur.execute("SELECT * FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(picker.lower()),))
             result = res.fetchall()
             if len(result) > 0:
-                await botsay(f"Added member: {picker}!")
+                await botsayer.say(f"Added member: {picker}!")
             else:
                 raise Exception("Problem adding a new member!")
 
@@ -43,7 +39,7 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         res = cur.execute("SELECT * FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(film.lower()),))
         result = res.fetchall()
         if len(result) > 0:
-            await botsay(f"Added film data: {string.capwords(film)}!", channel)
+            await botsayer.say(f"Added film data: {string.capwords(film)}!")
         else:
             raise Exception(f"Error: problem adding {film}!")
 
@@ -54,7 +50,7 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
         res = cur.execute("SELECT * FROM Pickers WHERE date = ?;", (dateint,))
         result = res.fetchall()
         if len(result) > 0:
-            await botsay(f"Added picker data: {picker.capitalize()} picked {string.capwords(film)}! :pregnant_man:", channel)
+            await botsayer.say(f"Added picker data: {picker.capitalize()} picked {string.capwords(film)}! :pregnant_man:")
         else:
             raise Exception(f"Problem adding pick: {film}, {picker}!")
 
@@ -72,7 +68,7 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
                 result = br.submit_selected()
                 imdb_url = result.url
             except Exception as e:
-                await botsay(f"Problem with fetching imdb data!", channel)
+                await botsayer.say(f"Problem with fetching imdb data!")
                 raise e
 
             try:
@@ -85,72 +81,60 @@ async def pick(picker: str, film: str, botsay, tryprint, channel):
                         res = cur.execute("SELECT * FROM IMDb_ids WHERE imdb_id = ?;", (imdb_code,))
                         result = res.fetchall()
                         if len(result) > 0:
-                            await botsay(f"Added imdb link: [{string.capwords(film)}](http://www.imdb.com/title/{imdb_code})!", channel)
+                            await botsayer.say(f"Added imdb link: [{string.capwords(film)}](http://www.imdb.com/title/{imdb_code})!")
                         else:
                             raise Exception(f"Error: problem adding imdb data for {string.capwords(film)}!")
                     except Exception as e:
-                        await botsay(f"Problem inserting imdb data into database!", channel)
+                        await botsayer.say(f"Failure inserting imdb data into database!")
                         raise e
 
             except Exception as e:
-                await botsay(f"Problem with imdb code!", channel)
                 raise e
-            
 
         except Exception as e:
-            await botsay(f"Error: {e}", channel)
+            con.commit()
+            con.close()
+            await botsayer.say(f"Error: {e}")
+            raise e
 
-
-        # committing the changes and closing the connection <== 10/07/24 12:39:04 # 
+    except Exception as e:
         con.commit()
         con.close()
-            
-    except Exception as e:
-        await botsay(f"Error: {e}", channel)
-        raise e
+        await botsayer.say(f"Error: {e}")
+
+    con.commit()
+    con.close()
+
+    return ""
 
 
-async def undopick(picker,
-                     botsay,
-                     tryprint,
-                     channel):
-
+async def undopick(picker: str, botsayer: Botsay) -> str:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     dateint = int(datetime.today().strftime("%Y%m%d"))
     res = cur.execute(f"SELECT * FROM Pickers WHERE user_id = {memberIDSelectSkeleton()} AND date = ?", (picker,dateint,))
     results = res.fetchall()
-    if len(results) > 0:
-        try:
-            cur.execute(f"DELETE FROM Films WHERE id IN (SELECT film_id FROM \
-            Pickers WHERE date = ? AND user_id = {memberIDSelectSkeleton()})", (dateint,picker,))
+    response = ""
+    try:
+        if len(results) > 0:
+            cur.execute(f"DELETE FROM Films WHERE id IN (SELECT film_id FROM Pickers WHERE date = ? AND user_id = {memberIDSelectSkeleton()})", (dateint,picker,))
             cur.execute(f"DELETE FROM Pickers WHERE user_id = {memberIDSelectSkeleton()} AND date = ?", (picker,dateint,))
+            cur.execute(f"DELETE FROM IMDb_ids WHERE film_id NOT IN (SELECT id FROM Films)")
             res = cur.execute(f"SELECT * FROM Pickers WHERE user_id = {memberIDSelectSkeleton()} AND date = ?", (picker,dateint,))
             results = res.fetchall()
             if len(results) == 0:
-                tryprint("Deleted picks.")
-                await botsay("Deleted all your picks from today!", channel)
+                response = "Deleted all your picks from today!"
             else:
                 raise Exception("Some kinda problemo deleting picks!")
-        except Exception as e:
-            await botsay(f"Error: {e}", channel)
-            raise e
-    else:
-        await botsay("No picks today to delete! (To delete older picks, contact Justin.)", channel)
+        else:
+            cur.execute(f"DELETE FROM IMDb_ids WHERE film_id NOT IN (SELECT id FROM Films)")
+            response = "No picks today to delete! (To delete older picks, contact Justin.)"
+    except Exception as e:
+        con.commit()
+        con.close()
+        await botsayer.say(f"Error: {e}")
+        raise e
 
     con.commit()
     con.close()
-
-
-
-async def pickSystem(author, members, mess, usernames, botsay, tryprint, fieldnames, guild, channel, memberIDs):
-
-    # undoing a pick 
-    
-    if mess.startswith('undopick'):
-        await undopick(author, botsay, tryprint, channel)
-
-    # making a pick
-    if mess.startswith('pick:'):
-        film = f"{mess.removeprefix('pick:').strip()}"
-        await pick(author, film, botsay, tryprint, channel)
+    return response

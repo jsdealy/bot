@@ -1,7 +1,7 @@
 async def help(message):
     mess = message.content.lower()
     # get a HELP message
-    if mess == 'help!':
+    if mess in ['help!', 'help', '!help']:
         response = "```\no==========================o\n'check!'\n" 
         response += "Prints the current rotation\no==========================o\n\n"
         response += "o==========================o\n'<member>check'\n" 
@@ -51,12 +51,4 @@ async def help(message):
                 "o==========================o\n\n"
         response += "o==========================o\n'rand!'\n" 
         response += "Picks a random film from your list!\no==========================o\n```"
-        await message.channel.send(response)
-
-    if mess.startswith('lshelp'):
-        response = "```\nLUNASEARCH ('ls')\n" 
-        response += "Options:\n -t: title\n -y: year (e.g., '2002', '1950+', '1960-1980', '2010-')\n -l: length in minutes (e.g., '120-140', '150-')\n -#: number of random results\n -g: genre\n" \
-                " -i: imdb rating (e.g., '8+', '5-7')\n -x: acclaim (e.g., '40+', '50-70')\n -d: directors\n -c: language (e.g., 'spanish')\n -a: actors\n -w: writers\n" \
-                " --genre-list: lists all genres\n" \
-                " --languages: lists all languages\n```"
         await message.channel.send(response)

@@ -47,7 +47,7 @@ class Dropdown(Select):
             await interaction.response.send_message("Not your list you momo!", ephemeral=True)
                 
 
-        # saving the list 
+# saving the list 
 
 async def randPick(picker, botsay, channel):
     await botsay(f"Picking a random item on {picker.title()}'s list...", channel)
@@ -166,4 +166,3 @@ async def modList(mess, author, tryprint, botsay, channel):
             # saving the list 
             if mode == "cut:" or mode == "add:":
                 await updateFile(tryprint, f"{members[i]}listnew", f"{members[i]}list")
-
