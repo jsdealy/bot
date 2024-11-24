@@ -92,18 +92,18 @@ async def add_to_list(interaction: discord.Interaction, film: str):
             for line in rob:
                 if film_sanitized == line.strip().strip('\n'):
                     alreadyIn = True
+            if alreadyIn == False:
+                with open(f"{username}listnew", "w") as wob:
+                    rob.seek(0)
+                    for line in rob:
+                        wob.write(line)
+                    wob.write(film_sanitized)
+                await updateFile(tryprint, f"{username}listnew", f"{username}list")
+                await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
     except FileNotFoundError:
         await botsayer.setChannel(interaction.channel).say(f"Creating a list for {nameconvert(interaction.user.name)}")
-    if alreadyIn == False:
-        with open(f"{username}listnew", "w") as wob:
-            rob.seek(0)
-            for line in rob:
-                wob.write(line)
-            wob.write(film_sanitized)
-        await updateFile(tryprint, f"{username}listnew", f"{username}list")
-        await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
 
 @bot.tree.command(name="cutfromlist", description="cut a film from your list", guild=guild)
 @discord.app_commands.autocomplete(film=filmlist_autocomplete)
