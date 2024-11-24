@@ -15,7 +15,7 @@ from modz.memberSeenAndPick import memberSeen
 from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE
 from modz.buttonTest import buttonTest
 from modz.randomChooser import randomChooser
-from modz.sqliteHelpers import getAllFilms
+from modz.sqliteHelpers import getAllPicks
 import os
 import discord
 from dotenv import load_dotenv
@@ -76,7 +76,7 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     return ret[:25]
 
 async def films_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
-    films = getAllFilms()
+    films = getAllPicks()
     ret = [discord.app_commands.Choice(name=string.capwords(film), value=film) for film in films if current.lower() in film]
     ret.reverse()
     return ret[:25]
@@ -127,7 +127,7 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
 @discord.app_commands.autocomplete(film=films_autocomplete)
 async def list_club_picks(interaction: discord.Interaction, film: str):
     try:
-        await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{getIMDbForFilmLIKE(film)})')
+        await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{getIMDbForFilmLIKE(film)})', ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
         raise e

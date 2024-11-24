@@ -100,6 +100,17 @@ def getAllFilms() -> list[str]:
     else:
         raise Exception("Didn't find any films in database, oh no!")
 
+def getAllPicks() -> list[str]:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT film_name FROM Films, Pickers WHERE Films.id = Pickers.film_id;")
+    films_raw = res.fetchall()
+    con.close()
+    if len(films_raw) > 0:
+        return [tup[0] for tup in films_raw]
+    else:
+        raise Exception("Didn't find any films in database, oh no!")
+
 def getIMDbForFilmLIKE(s: str) -> str:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
