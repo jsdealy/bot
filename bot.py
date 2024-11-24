@@ -81,7 +81,7 @@ async def films_autocomplete(interaction: discord.Interaction, current: str,) ->
     ret.reverse()
     return ret[:25]
 
-@bot.tree.command(name="addtolist", description="add a film to your list", guild=guild)
+@bot.tree.command(name="listadd", description="add a film to your list", guild=guild)
 async def add_to_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
@@ -97,7 +97,7 @@ async def add_to_list(interaction: discord.Interaction, film: str):
                     rob.seek(0)
                     for line in rob:
                         wob.write(line)
-                    wob.write(film_sanitized)
+                    wob.write(f"{film_sanitized}\n")
                 await updateFile(tryprint, f"{username}listnew", f"{username}list")
                 await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
             else:
@@ -105,7 +105,7 @@ async def add_to_list(interaction: discord.Interaction, film: str):
     except FileNotFoundError:
         await botsayer.setChannel(interaction.channel).say(f"Creating a list for {nameconvert(interaction.user.name)}")
 
-@bot.tree.command(name="cutfromlist", description="cut a film from your list", guild=guild)
+@bot.tree.command(name="listcut", description="cut a film from your list", guild=guild)
 @discord.app_commands.autocomplete(film=filmlist_autocomplete)
 async def cut_from_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
