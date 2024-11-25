@@ -4,6 +4,10 @@ from botsay import Botsay
 from newIMDb import addIMDbData
 from typing import Any
 
+
+class NoFilmsLIKE(Exception):
+    pass
+
 def filmIDSelectSkeleton():
     return "(SELECT id FROM Films WHERE film_name = ?)"
 
@@ -100,6 +104,27 @@ def getMembers() -> list[str]:
     else:
         raise Exception("Didn't find any members in database, oh no!")
 
+def getList(user_id: int) -> list[str]:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    films_raw = cur.execute("SELECT film_name FROM Films, Lists WHERE Films.id = Lists.film_id AND Lists.user_id = ?;", (user_id,)).fetchall()
+    con.close()
+    if len(films_raw) > 0:
+        return [tup[0] for tup in films_raw]
+    else:
+        raise Exception("Didn't find any films in list!")
+
+def getAllPicks() -> list[str]:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    res = cur.execute("SELECT film_name FROM Films, Pickers WHERE Films.id = Pickers.film_id;")
+    films_raw = res.fetchall()
+    con.close()
+    if len(films_raw) > 0:
+        return [tup[0] for tup in films_raw]
+    else:
+        raise Exception("Didn't find any films in database, oh no!")
+
 def getAllFilms() -> list[str]:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
@@ -119,13 +144,15 @@ def getIMDbForFilmLIKE(s: str) -> str:
     con.close()
     return imdb_id
 
-def getFilmsLIKE(s: str) -> list[tuple[str]]:
+def getFilmsLIKE(film_name: str) -> list[str]:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT film_name FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.replace("'",'%').lower()),))
-    films = res.fetchall()
+    films_raw = cur.execute("SELECT film_name FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(film_name.replace("'",'%').lower()),)).fetchall()
     con.close()
-    return films
+    if len(films_raw) > 0:
+        return [tup[0] for tup in films_raw]
+    else:
+        return []
 
 def getFilmIDs(s: str) -> list[tuple[int]]:
     con = sqlite3.connect("filmdata.db")
@@ -141,11 +168,13 @@ def getFilmID(s: str) -> int:
     res = cur.execute("SELECT id FROM Films WHERE film_name LIKE ?;", (wildcardWrapForLIKE(s.replace("'",'%').lower()),))
     film_ids = res.fetchall()
     con.close()
-    if len(film_ids) > 0:
+    if len(film_ids) == 0:
         film_id = film_ids[0][0]
         return film_id
+    elif len(film_ids) > 0:
+        raise Exception(f"More than one film matching '{string.capwords(s)}' found in database.")
     else:
-        raise Exception(f"Film '{string.capwords(s)}' not found in database.")
+        raise Exception(f"No film matching '{string.capwords(s)}' in database.")
 
 def getRating(user_id: int, film_id: int) -> int:
     con = sqlite3.connect("filmdata.db")
@@ -159,10 +188,21 @@ def getRating(user_id: int, film_id: int) -> int:
     else:
         raise Exception(f"Problem fetching rating for user_id {user_id} and film_id {film_id}.")
 
-def getUserID(s: str) -> int:
+def getUserID(username: str, counter=0) -> int:
+    if counter > 1:
+        raise Exception("Excessive recursion in getUserID.")
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(s.lower()),))
-    user_id = res.fetchone()[0]
-    con.close()
-    return user_id
+    user_id_raw = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(username.lower()),)).fetchall()
+    if len(user_id_raw) == 1:
+        return user_id_raw[0][0]
+    elif len(user_id_raw) > 1:
+        raise Exception(f"More than one user matches {username}")
+    else:
+        insert(cur,"Members",name=username)
+        con.commit()
+        con.close()
+        counter += 1
+        getUserID(username, counter)
+        raise Exception("This should not throw! Problem in getUserID.")
+    

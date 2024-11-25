@@ -12,8 +12,8 @@ def addIMDbData(cur: sqlite3.Cursor, film_id: int):
     form["q"] = f"{film_name} site:imdb.com"
     form.choose_submit("btnI")
     response = br.submit_selected()
-    reg_match = reg.search(response.url)
     try:
+        reg_match = reg.search(response.url)
         imdb_code = reg_match.group()
         res = cur.execute("INSERT INTO IMDb_ids (film_id, imdb_id) VALUES (?, ?)", (film_id,imdb_code,))
         print(f"{film_name}, done")

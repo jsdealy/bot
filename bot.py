@@ -1,5 +1,5 @@
 # bot.py
-import random, re, mechanicalsoup, string
+import random,re,mechanicalsoup,string,sqlite3
 from discord.ext import commands
 from modz.emoji import discord_emojis
 from typing import Any
@@ -12,10 +12,9 @@ from modz.pickSystem import pick,undopick
 from modz.displayStats import displayStats, lastFive, leaderboard
 from modz.botsay import botsay, Botsay
 from modz.memberSeenAndPick import memberSeen
-from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE
+from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getAllPicks,getFilmsLIKE,NoFilmsLIKE,insert,getFilmID,getUserID
 from modz.buttonTest import buttonTest
 from modz.randomChooser import randomChooser
-from modz.sqliteHelpers import getAllFilms
 import os
 import discord
 from dotenv import load_dotenv
@@ -76,34 +75,54 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     return ret[:25]
 
 async def films_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
-    films = getAllFilms()
+    films = getAllPicks()
     ret = [discord.app_commands.Choice(name=string.capwords(film), value=film) for film in films if current.lower() in film]
     ret.reverse()
     return ret[:25]
 
 @bot.tree.command(name="addtolist", description="add a film to your list", guild=guild)
 async def add_to_list(interaction: discord.Interaction, film: str):
-    film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
-    alreadyIn = False
     try:
-        with open(f"{username}list", "r") as rob:
-            alreadyIn = False
-            for line in rob:
-                if film_sanitized == line.strip().strip('\n'):
-                    alreadyIn = True
-    except FileNotFoundError:
-        await botsayer.setChannel(interaction.channel).say(f"Creating a list for {nameconvert(interaction.user.name)}")
-    if alreadyIn == False:
-        with open(f"{username}listnew", "w") as wob:
-            rob.seek(0)
-            for line in rob:
-                wob.write(line)
-            wob.write(film_sanitized)
-        await updateFile(tryprint, f"{username}listnew", f"{username}list")
-        await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
+        user_id = getUserID(username)
+    except Exception as e:
+        print(f"Error: {e}")
+        return
+    film_sanitized = film.lower().strip().strip('\n')
+    yearmatch = re.compile(r"(.*)\s*\((\d{4})\)\s*$").search(film_sanitized)
+    if yearmatch != None:
+        film = yearmatch.group(1)
+        year = yearmatch.group(2)
     else:
-        await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
+        film = film_sanitized
+    films_like = getFilmsLIKE(film)
+    # adding film to database <== 11/24/24 19:48:36 # 
+    if len(films_like) == 0:
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
+        try:
+            insert(cur,"Films", film_name=film)
+        except Exception as e:
+            print(f"Error: {e}")
+            return
+        con.commit()
+        con.close()
+    try:
+        film_id = getFilmID(film)
+    except Exception as e:
+        print(f"Error: {e}")
+        return
+    try: 
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
+        insert(cur,"Lists",user_id=user_id,film_id=film_id)
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"Error: {e}")
+        return
+    await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
+    await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
 
 @bot.tree.command(name="cutfromlist", description="cut a film from your list", guild=guild)
 @discord.app_commands.autocomplete(film=filmlist_autocomplete)
