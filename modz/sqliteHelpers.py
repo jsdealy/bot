@@ -32,11 +32,6 @@ def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
     except Exception as e:
         print(f"Error: {e}")
         raise e
-    list_of_equations = [f"{key}={values[key]}" for key in list_of_fields]
-    cur.execute(f"SELECT * FROM {table} WHERE {' AND '.join(list_of_equations)};")
-    if len(cur.fetchall()) < 1:
-        print(f"Failed to add {' AND '.join(list_of_equations)} to {table}.")
-        return False
     return True
 
 async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
@@ -50,6 +45,7 @@ async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
     cur.execute("SELECT * FROM Members WHERE name = ?;", (user.lower(),))
     if len(cur.fetchall()) < 1:
         if insert(cur, "Members", name=user.lower()) and doprint:
+            con.commit()
             print(f"Added member {user}!") 
             await botsayer.say(f"Added member {user}!") 
         else:
@@ -58,6 +54,7 @@ async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
     cur.execute("SELECT * FROM Films WHERE film_name = ?;", (film.lower(),))
     if len(cur.fetchall()) < 1:
         if insert(cur, "Films", film_name=film.lower()):
+            con.commit()
             print(f"Added film to database: {film.lower()}!")
         else:
             raise Exception(f"Couldn't add film to database: {film.lower()}")
@@ -70,6 +67,7 @@ async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
     cur.execute("SELECT * FROM Lists WHERE film_id = ? AND user_id = ?", (film_id, user_id,))
     if len(cur.fetchall()) < 1:
         if insert(cur, "Lists", film_id=film_id, user_id=user_id):
+            con.commit()
             print(f"Added {film} to {user}'s list.")
         else:
             raise Exception(f"Couldn't add {film} to {user}'s list.")

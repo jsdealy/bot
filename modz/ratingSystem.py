@@ -4,7 +4,7 @@ from enum import Enum
 from .botsay import Botsay
 from datetime import datetime
 from .numToRating import numToRating
-from .sqliteHelpers import memberIDSelectSkeleton,filmIDSelectSkeleton,wildcardWrapForLIKE,getFilmsLIKE,today,getFilmIDs,getUserID,getFilmID,getRating
+from .sqliteHelpers import memberIDSelectSkeleton,filmIDSelectSkeleton,wildcardWrapForLIKE,getFilmsLIKE,today,getFilmIDs,getUserID,getFilmID,getRating,insert
 
 ratingMode ={}
 skip = {}
@@ -75,6 +75,9 @@ def _rateFilm(film_id: int, user_id: int, rating: int):
         cur.execute("UPDATE Ratings SET rating = ?, date = ? WHERE film_id = ? AND user_id = ?;", (rating,today(),film_id,user_id,))
         con.commit()
     else:
+        cur.execute("SELECT * FROM Pickers WHERE film_id = ?", (film_id,))
+        if len(cur.fetchall()) < 1:
+            raise Exception("Cannot rate a film that was never picked.")
         cur.execute("INSERT INTO Ratings (film_id,user_id,rating,date) VALUES (?,?,?,?)", (film_id,user_id,rating,today(),))
         con.commit()
     con.close()
@@ -110,8 +113,21 @@ async def container(mess, botsayer):
 async def rateFilm(user: str, film: str, rating: int) -> str:
     # send the rating to the database
     try:
-        film_id = getFilmID(film)
         user_id = getUserID(user)
+    except Exception as e:
+        print(f"Error: {e}")
+        try:
+            con = sqlite3.connect("filmdata.db")
+            cur = con.cursor()
+            insert(cur,"Members",name=user)
+            con.commit()
+            con.close()
+            user_id = getUserID(user)
+        except Exception as e:
+            print(f"Error: {e}")
+            raise e
+    try:
+        film_id = getFilmID(film)
         _rateFilm(film_id,user_id,rating)
     except Exception as e:
         raise e

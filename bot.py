@@ -1,6 +1,7 @@
 # bot.py
 import random, re, mechanicalsoup, string
 from discord.ext import commands
+from modz.websearch import siteSearch
 from modz.emoji import discord_emojis
 from typing import Any
 from modz.updateFile import updateFile
@@ -85,7 +86,6 @@ async def films_autocomplete(interaction: discord.Interaction, current: str,) ->
 async def add_to_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
-    alreadyIn = False
     try:
         with open(f"{username}list", "r") as rob:
             alreadyIn = False
@@ -104,6 +104,9 @@ async def add_to_list(interaction: discord.Interaction, film: str):
                 await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
     except FileNotFoundError:
         await botsayer.setChannel(interaction.channel).say(f"Creating a list for {nameconvert(interaction.user.name)}")
+        with open(f"{username}list", "w") as wob:
+            wob.write(f"{film_sanitized}\n")
+        await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
 
 @bot.tree.command(name="listcut", description="cut a film from your list", guild=guild)
 @discord.app_commands.autocomplete(film=filmlist_autocomplete)
@@ -170,7 +173,11 @@ async def rand(interaction: discord.Interaction):
 @discord.app_commands.autocomplete(film=films_autocomplete)
 @discord.app_commands.choices(rating=ratings)
 async def rate(interaction: discord.Interaction, film: str, rating: discord.app_commands.Choice[int]):
-    response = await rateFilm(nameconvert(interaction.user.name),film,rating.value)
+    try:
+        response = await rateFilm(nameconvert(interaction.user.name),film,rating.value)
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        return
     await interaction.response.send_message(response)
 
 @bot.tree.command(name="pick", description="declare your film pick", guild=guild)
@@ -251,6 +258,8 @@ async def on_message(message: discord.Message):
     # misc <== 11/16/24 15:28:28 # 
     if mess.startswith("choose:"):
         await randomChooser(message.content, channel)
+
+    await siteSearch(mess, botsay, channel)
 
     if mess.startswith("!"):
         await botsayer.setChannel(channel).say("Try using an initial / instead of ! if you're trying to execute a command. :pregnant_man:")
