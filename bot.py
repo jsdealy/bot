@@ -152,7 +152,7 @@ async def list_films(interaction: discord.Interaction, film: str):
         con = FDCon()
         imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=film)
         if len(imdb_raw_list) > 0:
-            await interaction.response.send_message(f'[{string.capwords(film)}]({imdb_raw_list[0][0]})',ephemeral=True)
+            await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
             return
         br = mechanicalsoup.StatefulBrowser()
         br.open("http://google.com")
