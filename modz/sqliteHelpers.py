@@ -1,8 +1,6 @@
-import sqlite3,string,re
+import sqlite3,string
 from datetime import datetime
-from .botsay import Botsay
-from .newIMDb import addIMDbData
-from typing import Any, List, LiteralString
+from typing import Any, List
 
 class FDCon:
     def __init__(self) -> None:

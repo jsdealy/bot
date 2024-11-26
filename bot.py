@@ -183,7 +183,6 @@ async def rand(interaction: discord.Interaction):
         await interaction.response.send_message(f'[{string.capwords(random_film)}]({result.url})', ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
-        raise e
 
 @bot.tree.command(name="rate", description="rate a film that was watched at a movie night", guild=guild)
 @discord.app_commands.autocomplete(film=films_autocomplete)
