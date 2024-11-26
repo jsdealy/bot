@@ -20,6 +20,15 @@ def today():
     return int(datetime.today().strftime("%Y%m%d"))
 
 def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
+    """
+    File: sqliteHelpers.py
+    Author: Justin Dealy
+    Github: https://github.com/jsdealy
+    Description: Inserts into sqlite table associated with 
+    cursor. Values are named arguments where name is 
+    the columnname and value is whatever you want to insert. 
+    Does not commit the result. 
+    """
     cur.fetchall()
     list_of_fields: list[str] = [key for key in values.keys()]
     list_of_qmarks = ["?" for key in list_of_fields]
@@ -33,48 +42,6 @@ def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
         print(f"Error: {e}")
         raise e
     return True
-
-async def insertIntoUserList(user: str, film: str, **kwargs: Botsay) -> None:
-    doprint = False
-    botsayer = kwargs.get("botsayer")
-    if "botsayer" in kwargs.keys():
-        doprint = True
-    con = sqlite3.connect("filmdata.db")
-    cur = con.cursor()
-    film_id: int = 0
-    cur.execute("SELECT * FROM Members WHERE name = ?;", (user.lower(),))
-    if len(cur.fetchall()) < 1:
-        if insert(cur, "Members", name=user.lower()) and doprint:
-            con.commit()
-            print(f"Added member {user}!") 
-            await botsayer.say(f"Added member {user}!") 
-        else:
-            raise Exception(f"Couldn't add member {user}")
-    user_id: int = cur.execute("SELECT id FROM Members WHERE name = ?", (user.lower(),)).fetchall()[0][0]
-    cur.execute("SELECT * FROM Films WHERE film_name = ?;", (film.lower(),))
-    if len(cur.fetchall()) < 1:
-        if insert(cur, "Films", film_name=film.lower()):
-            con.commit()
-            print(f"Added film to database: {film.lower()}!")
-        else:
-            raise Exception(f"Couldn't add film to database: {film.lower()}")
-        film_id = cur.execute("SELECT id FROM Films WHERE film_name = ?", (film.lower(),)).fetchall()[0][0]
-        try:
-            addIMDbData(film_id)
-        except Exception as e:
-            raise e
-        print(f"Added IMDb data for {film.lower()}")
-    cur.execute("SELECT * FROM Lists WHERE film_id = ? AND user_id = ?", (film_id, user_id,))
-    if len(cur.fetchall()) < 1:
-        if insert(cur, "Lists", film_id=film_id, user_id=user_id):
-            con.commit()
-            print(f"Added {film} to {user}'s list.")
-        else:
-            raise Exception(f"Couldn't add {film} to {user}'s list.")
-    elif doprint:
-        print(f"{film} is already in {user}'s list!")
-        await botsayer.say(f"{film} is already in {user}'s list!")
-    con.close()
 
 def getMembers() -> list[str]:
     con = sqlite3.connect("filmdata.db")
@@ -157,10 +124,26 @@ def getRating(user_id: int, film_id: int) -> int:
     else:
         raise Exception(f"Problem fetching rating for user_id {user_id} and film_id {film_id}.")
 
-def getUserID(s: str) -> int:
+def getUserID(username: str) -> int:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
-    res = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(s.lower()),))
+    res = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(username.lower()),))
     user_id = res.fetchone()[0]
+    con.close()
+    return user_id
+
+def getOrCreateAndGetUserID(username: str, retry=False) -> int:
+    con = sqlite3.connect("filmdata.db")
+    cur = con.cursor()
+    user_id: int = -1
+    try: 
+        user_id = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(username.lower()),)).fetchone()[0]
+    except Exception as e:
+        print(f"Error: {e}")
+        if retry:
+            raise e
+        insert(cur,"Members",name=username)
+        con.commit()
+        getOrCreateAndGetUserID(username, True)
     con.close()
     return user_id

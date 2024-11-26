@@ -1,5 +1,5 @@
 # bot.py
-import random, re, mechanicalsoup, string
+import random, re, mechanicalsoup, string, sqlite3
 from discord.ext import commands
 from modz.websearch import siteSearch
 from modz.emoji import discord_emojis
@@ -13,7 +13,7 @@ from modz.pickSystem import pick,undopick
 from modz.displayStats import displayStats, lastFive, leaderboard
 from modz.botsay import botsay, Botsay
 from modz.memberSeenAndPick import memberSeen
-from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE
+from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getOrCreateAndGetUserID,insert
 from modz.buttonTest import buttonTest
 from modz.randomChooser import randomChooser
 from modz.sqliteHelpers import getAllPicks
@@ -87,26 +87,16 @@ async def add_to_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
     try:
-        with open(f"{username}list", "r") as rob:
-            alreadyIn = False
-            for line in rob:
-                if film_sanitized == line.strip().strip('\n'):
-                    alreadyIn = True
-            if alreadyIn == False:
-                with open(f"{username}listnew", "w") as wob:
-                    rob.seek(0)
-                    for line in rob:
-                        wob.write(line)
-                    wob.write(f"{film_sanitized}\n")
-                await updateFile(tryprint, f"{username}listnew", f"{username}list")
-                await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
-            else:
-                await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
-    except FileNotFoundError:
-        await botsayer.setChannel(interaction.channel).say(f"Creating a list for {nameconvert(interaction.user.name)}")
-        with open(f"{username}list", "w") as wob:
-            wob.write(f"{film_sanitized}\n")
-        await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
+        user_id = getOrCreateAndGetUserID(username)
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
+        insert(cur, "Lists", user_id=user_id, film_name=film_sanitized)
+        con.commit()
+        con.close()
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        return
+    await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
 
 @bot.tree.command(name="listcut", description="cut a film from your list", guild=guild)
 @discord.app_commands.autocomplete(film=filmlist_autocomplete)
