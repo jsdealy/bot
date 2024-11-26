@@ -79,6 +79,7 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
         return []
     try:
         films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
+        films += [tup[0] for tup in select(con.cur(),"film_name",tables=["Films","Pickers"],Films__id=r"Pickers.film_id")]
     except Exception as e:
         print(f"Error getting films: {e.with_traceback}")
         return []
