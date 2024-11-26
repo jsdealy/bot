@@ -132,7 +132,7 @@ async def add_to_list(interaction: discord.Interaction, film: str):
 async def cut_from_list(interaction: discord.Interaction, film: str):
     try:
         con = FDCon()
-        user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))
+        user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
         delete(con.cur(),"Lists",user_id=user_id,film_name=film)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
