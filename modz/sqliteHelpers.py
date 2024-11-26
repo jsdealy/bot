@@ -72,7 +72,7 @@ def select(cur: sqlite3.Cursor, *selected_cols: str, **values: Any) -> list[tupl
     cur.fetchall()
     table_list = values.pop("tables")
     list_of_fields: list[str] = [f"{key.replace("__",".")}=?" for key in values.keys()]
-    list_of_values = [values[key] for key in list_of_fields]
+    list_of_values = [values[key] for key in values.keys()]
     table_list_str = f"{', '.join(table_list)}"
     selected_cols_str = f"{', '.join(selected_cols)}"
     field_list_str = f"({' AND '.join(list_of_fields)})"

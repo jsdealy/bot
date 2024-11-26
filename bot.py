@@ -75,8 +75,7 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     try:
         user_id = select(con.cur(),"id",tables=["Members"], name="justin")[0][0]
     except Exception as e:
-        tb = exc_info()[2]
-        print(f"Error getting user_id: {e.with_traceback(tb)}")
+        print(f"Error getting user_id: {e}")
         return []
     try:
         films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
