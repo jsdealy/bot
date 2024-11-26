@@ -30,6 +30,29 @@ def wildcardWrapForLIKE(s: str | list[str]):
 def today():
     return int(datetime.today().strftime("%Y%m%d"))
 
+def delete(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
+    """
+    File: sqliteHelpers.py
+    Author: Justin Dealy
+    Github: https://github.com/jsdealy
+    Description: Deletes from a table. Values 
+    cannot be empty. 
+    """
+    cur.fetchall()
+    if len(values) < 1:
+        raise Exception("Called delete without any values")
+    list_of_fields: list[str] = [key for key in values.keys()]
+    field_string_list = [f"{field}=?" for field in list_of_fields]
+    list_of_values = [values[key] for key in list_of_fields]
+    field_list_str = f"({' AND '.join(field_string_list)})"
+    val_tup = tuple(list_of_values)
+    try:
+        cur.execute(f"DELETE FROM {table} WHERE {field_list_str};", val_tup)
+    except Exception as e:
+        print(f"Error: {e}")
+        raise e
+    return True
+
 def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
     """
     File: sqliteHelpers.py
@@ -41,7 +64,7 @@ def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
     Does not commit the result. 
     """
     cur.fetchall()
-    list_of_fields: list[str] = [key.replace("-",".") for key in values.keys()]
+    list_of_fields: list[str] = [key for key in values.keys()]
     list_of_qmarks = ["?" for key in list_of_fields]
     list_of_values = [values[key] for key in list_of_fields]
     field_list_str = f"({', '.join(list_of_fields)})"
@@ -81,8 +104,8 @@ def select(cur: sqlite3.Cursor, *selected_cols: str, **values: Any) -> list[tupl
     selected_cols_str = f"{', '.join(selected_cols)}"
     field_list_str = f"{' AND '.join(join_table + list_of_fields)}"
     val_tup = tuple(list_of_values)
-    print(f"SQL STRING: SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};")
-    print(val_tup)
+    # print(f"SQL STRING: SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};")
+    # print(val_tup)
     try:
         raw_tups = cur.execute(f"SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};", val_tup).fetchall()
         return raw_tups
