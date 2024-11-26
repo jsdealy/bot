@@ -72,7 +72,7 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     films = []
     user_id: int = -1
     try:
-        user_id = select(con.cur(),"id",tables=["Members"], name=nameconvert(interaction.user.name))[0][0]
+        user_id = select(con.cur(),"id",tables=["Members"], name="justin")[0][0]
     except Exception as e:
         print(f"Error getting user_id: {e}")
         return []
