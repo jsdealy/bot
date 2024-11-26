@@ -1,8 +1,19 @@
-import sqlite3,string
+import sqlite3,string,re
 from datetime import datetime
 from .botsay import Botsay
 from .newIMDb import addIMDbData
-from typing import Any
+from typing import Any, List, LiteralString
+
+class FDCon:
+    def __init__(self) -> None:
+        self._con = sqlite3.connect("filmdata.db")
+        self._cur = self._con.cursor()
+    def __del__(self):
+        self._con.close()
+    def cur(self) -> sqlite3.Cursor:
+        return self._cur
+    def execute(self,sql_string: str):
+        return self._cur.execute(sql_string)
 
 def filmIDSelectSkeleton():
     return "(SELECT id FROM Films WHERE film_name = ?)"
@@ -24,13 +35,13 @@ def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
     File: sqliteHelpers.py
     Author: Justin Dealy
     Github: https://github.com/jsdealy
-    Description: Inserts into sqlite table associated with 
+    Description: Inserts into sqlite table in database associated with 
     cursor. Values are named arguments where name is 
     the columnname and value is whatever you want to insert. 
     Does not commit the result. 
     """
     cur.fetchall()
-    list_of_fields: list[str] = [key for key in values.keys()]
+    list_of_fields: list[str] = [key.replace("-",".") for key in values.keys()]
     list_of_qmarks = ["?" for key in list_of_fields]
     list_of_values = [values[key] for key in list_of_fields]
     field_list_str = f"({', '.join(list_of_fields)})"
@@ -42,6 +53,36 @@ def insert(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
         print(f"Error: {e}")
         raise e
     return True
+
+def select(cur: sqlite3.Cursor, *selected_cols: str, **values: Any) -> list[tuple[Any]]:
+    """
+    File: sqliteHelpers.py
+    Author: Justin Dealy
+    Github: https://github.com/jsdealy
+    Description: Selects from sqlite tables associated with 
+    cursor. selected_cols is what it sounds like.
+    One of the values must have the key "tables". 
+    The rest should have keys that are columnnames 
+    and values being whatever you want to select. 
+    Double underscores in columnnames are replaced 
+    with a period. Returns raw list of tuples.
+    """
+    if "tables" not in values.keys() or not isinstance(values["tables"],List):
+        raise Exception("Call to select did not include a list value for arg 'tables'.")
+    cur.fetchall()
+    table_list = values.pop("tables")
+    list_of_fields: list[str] = [f"{key.replace("__",".")}=?" for key in values.keys()]
+    list_of_values = [values[key] for key in list_of_fields]
+    table_list_str = f"{', '.join(table_list)}"
+    selected_cols_str = f"{', '.join(selected_cols)}"
+    field_list_str = f"({' AND '.join(list_of_fields)})"
+    val_tup = tuple(list_of_values)
+    try:
+        raw_tups = cur.execute(f"SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};", val_tup).fetchall()
+        return raw_tups
+    except Exception as e:
+        print(f"Error: {e}")
+        raise e
 
 def getMembers() -> list[str]:
     con = sqlite3.connect("filmdata.db")
@@ -132,7 +173,18 @@ def getUserID(username: str) -> int:
     con.close()
     return user_id
 
-def getOrCreateAndGetUserID(username: str, retry=False) -> int:
+def getOrCreateAndGetUserID(username: str, _retry=False) -> int:
+    """
+    File: sqliteHelpers.py
+    Author: Justin Dealy
+    Email: yourname@email.com
+    Github: https://github.com/yourname
+    Description: Tries to get the user_id of username.
+    If the try fails, tries to insert username as a 
+    new entry in Members. Retry is used for recursion
+    and should be left False in non-recursive calls.
+    """
+    
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     user_id: int = -1
@@ -140,10 +192,14 @@ def getOrCreateAndGetUserID(username: str, retry=False) -> int:
         user_id = cur.execute("SELECT id FROM Members WHERE name LIKE ?;", (wildcardWrapForLIKE(username.lower()),)).fetchone()[0]
     except Exception as e:
         print(f"Error: {e}")
-        if retry:
+        if _retry:
             raise e
-        insert(cur,"Members",name=username)
-        con.commit()
+        try:
+            insert(cur,"Members",name=username)
+            con.commit()
+        except Exception as e:
+            print(f"Error: {e}")
+            raise e
         getOrCreateAndGetUserID(username, True)
     con.close()
     return user_id

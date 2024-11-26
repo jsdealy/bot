@@ -13,10 +13,10 @@ from modz.pickSystem import pick,undopick
 from modz.displayStats import displayStats, lastFive, leaderboard
 from modz.botsay import botsay, Botsay
 from modz.memberSeenAndPick import memberSeen
-from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getOrCreateAndGetUserID,insert
+from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getOrCreateAndGetUserID,insert,select,getUserID
 from modz.buttonTest import buttonTest
 from modz.randomChooser import randomChooser
-from modz.sqliteHelpers import getAllPicks
+from modz.sqliteHelpers import getAllPicks, FDCon
 import os
 import discord
 from dotenv import load_dotenv
@@ -68,10 +68,19 @@ bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 guild = discord.Object(id=848303003199209532)
 
 async def filmlist_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+    con = FDCon()
     films = []
-    with open(f"{nameconvert(interaction.user.name)}list", "r") as rob:
-        for line in rob:
-            films += [line]
+    user_id: int = -1
+    try:
+        user_id = select(con.cur(),"id",tables=["Members"], name=nameconvert(interaction.user.name))[0][0]
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
+    try:
+        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
     ret = [discord.app_commands.Choice(name=film, value=film) for film in films if current.lower() in film.lower()]
     random.shuffle(ret)
     return ret[:25]
