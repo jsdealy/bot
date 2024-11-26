@@ -1,5 +1,6 @@
 # bot.py
-import random, re, mechanicalsoup, string
+import random, re, mechanicalsoup, string, sqlite3
+from sys import exc_info
 from discord.ext import commands
 from modz.websearch import siteSearch
 from modz.emoji import discord_emojis
@@ -13,10 +14,10 @@ from modz.pickSystem import pick,undopick
 from modz.displayStats import displayStats, lastFive, leaderboard
 from modz.botsay import botsay, Botsay
 from modz.memberSeenAndPick import memberSeen
-from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE
+from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getOrCreateAndGetUserID,insert,select,getUserID,delete
 from modz.buttonTest import buttonTest
 from modz.randomChooser import randomChooser
-from modz.sqliteHelpers import getAllPicks
+from modz.sqliteHelpers import getAllPicks, FDCon
 import os
 import discord
 from dotenv import load_dotenv
@@ -67,19 +68,47 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 guild = discord.Object(id=848303003199209532)
 
-async def filmlist_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+async def films_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+    con = FDCon()
     films = []
-    with open(f"{nameconvert(interaction.user.name)}list", "r") as rob:
-        for line in rob:
-            films += [line]
+    user_id: int = -1
+    try:
+        user_id = select(con.cur(),"id",tables=["Members"], name=nameconvert(interaction.user.name))[0][0]
+    except Exception as e:
+        print(f"Error getting user_id: {e}")
+        return []
+    try:
+        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
+        films += [tup[0] for tup in select(con.cur(),"film_name",tables=["Films","Pickers"],joins=[r"Films.id=Pickers.film_id"])]
+    except Exception as e:
+        print(f"Error getting films: {e.with_traceback}")
+        return []
     ret = [discord.app_commands.Choice(name=film, value=film) for film in films if current.lower() in film.lower()]
     random.shuffle(ret)
     return ret[:25]
 
-async def films_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+async def picks_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     films = getAllPicks()
     ret = [discord.app_commands.Choice(name=string.capwords(film), value=film) for film in films if current.lower() in film]
     ret.reverse()
+    return ret[:25]
+
+async def list_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+    con = FDCon()
+    films = []
+    user_id: int = -1
+    try:
+        user_id = select(con.cur(),"id",tables=["Members"], name="justin")[0][0]
+    except Exception as e:
+        print(f"Error getting user_id: {e}")
+        return []
+    try:
+        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
+    except Exception as e:
+        print(f"Error getting films: {e.with_traceback}")
+        return []
+    ret = [discord.app_commands.Choice(name=film, value=film) for film in films if current.lower() in film.lower()]
+    random.shuffle(ret)
     return ret[:25]
 
 @bot.tree.command(name="listadd", description="add a film to your list", guild=guild)
@@ -87,58 +116,41 @@ async def add_to_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
     try:
-        with open(f"{username}list", "r") as rob:
-            alreadyIn = False
-            for line in rob:
-                if film_sanitized == line.strip().strip('\n'):
-                    alreadyIn = True
-            if alreadyIn == False:
-                with open(f"{username}listnew", "w") as wob:
-                    rob.seek(0)
-                    for line in rob:
-                        wob.write(line)
-                    wob.write(f"{film_sanitized}\n")
-                await updateFile(tryprint, f"{username}listnew", f"{username}list")
-                await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
-            else:
-                await interaction.response.send_message(f"{string.capwords(film_sanitized)} is already in your list!", ephemeral=True)
-    except FileNotFoundError:
-        await botsayer.setChannel(interaction.channel).say(f"Creating a list for {nameconvert(interaction.user.name)}")
-        with open(f"{username}list", "w") as wob:
-            wob.write(f"{film_sanitized}\n")
-        await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
+        user_id = getOrCreateAndGetUserID(username)
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
+        insert(cur, "Lists", user_id=user_id, film_name=film_sanitized)
+        con.commit()
+        con.close()
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        return
+    await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
 
 @bot.tree.command(name="listcut", description="cut a film from your list", guild=guild)
-@discord.app_commands.autocomplete(film=filmlist_autocomplete)
+@discord.app_commands.autocomplete(film=list_autocomplete)
 async def cut_from_list(interaction: discord.Interaction, film: str):
-    film_sanitized = film.lower().strip().strip('\n')
-    username = nameconvert(interaction.user.name)
-    cut = False
-    with open(f"{username}list", "r") as rob, open(f"{username}listnew", "w") as wob:
-        for line in rob:
-            if not line.startswith(film_sanitized):
-                wob.write(line)
-            else: 
-                cut = True
-    if cut:
-        await updateFile(tryprint, f"{username}listnew", f"{username}list")
-        await interaction.response.send_message(f"Cut: {string.capwords(film_sanitized)}", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"{string.capwords(film_sanitized)} is not in your list!", ephemeral=True)
-
-@bot.tree.command(name="picklink", description="get a link to a film the club watched", guild=guild)
-@discord.app_commands.autocomplete(film=films_autocomplete)
-async def list_club_picks(interaction: discord.Interaction, film: str):
     try:
-        await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{getIMDbForFilmLIKE(film)})', ephemeral=True)
+        con = FDCon()
+        if len(select(con.cur(),"id",tables=["Lists"],user_id=nameconvert(interaction.user.name),film_name=film)) < 1:
+            raise Exception(f"{film} is not in your list")
+        user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
+        delete(con.cur(),"Lists",user_id=user_id,film_name=film)
+        con.commit()
     except Exception as e:
-        await interaction.response.send_message(f"Error: {e}")
-        raise e
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        return
+    await interaction.response.send_message(f"Cut: {string.capwords(film)}", ephemeral=True)
 
-@bot.tree.command(name="listlink", description="get a link to a film you select from your list", guild=guild)
-@discord.app_commands.autocomplete(film=filmlist_autocomplete)
+@bot.tree.command(name="imdb", description="get imdb link to *any* film", guild=guild)
+@discord.app_commands.autocomplete(film=films_autocomplete)
 async def list_films(interaction: discord.Interaction, film: str):
     try:
+        con = FDCon()
+        imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=film)
+        if len(imdb_raw_list) > 0:
+            await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
+            return
         br = mechanicalsoup.StatefulBrowser()
         br.open("http://google.com")
         form = br.select_form()
@@ -150,14 +162,18 @@ async def list_films(interaction: discord.Interaction, film: str):
         await interaction.response.send_message(f"Error: {e}")
         raise e
 
-@bot.tree.command(name="rand", description="get a link to a random film from your list", guild=guild)
+@bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
 async def rand(interaction: discord.Interaction):
     films = []
     try:
-        with open(f"{nameconvert(interaction.user.name)}list", "r") as rob:
-            for line in rob:
-                films += [line]
+        con = FDCon()
+        user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
+        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
         random_film = random.choice(films)
+        imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=random_film)
+        if len(imdb_raw_list) > 0:
+            await interaction.response.send_message(f'[{string.capwords(random_film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
+            return
         br = mechanicalsoup.StatefulBrowser()
         br.open("http://google.com")
         form = br.select_form()
@@ -167,7 +183,6 @@ async def rand(interaction: discord.Interaction):
         await interaction.response.send_message(f'[{string.capwords(random_film)}]({result.url})', ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
-        raise e
 
 @bot.tree.command(name="rate", description="rate a film that was watched at a movie night", guild=guild)
 @discord.app_commands.autocomplete(film=films_autocomplete)
