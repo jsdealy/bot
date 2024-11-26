@@ -68,7 +68,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 guild = discord.Object(id=848303003199209532)
 
-async def filmlist_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+async def films_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     con = FDCon()
     films = []
     user_id: int = -1
@@ -87,10 +87,28 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     random.shuffle(ret)
     return ret[:25]
 
-async def films_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+async def picks_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     films = getAllPicks()
     ret = [discord.app_commands.Choice(name=string.capwords(film), value=film) for film in films if current.lower() in film]
     ret.reverse()
+    return ret[:25]
+
+async def list_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+    con = FDCon()
+    films = []
+    user_id: int = -1
+    try:
+        user_id = select(con.cur(),"id",tables=["Members"], name="justin")[0][0]
+    except Exception as e:
+        print(f"Error getting user_id: {e}")
+        return []
+    try:
+        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
+    except Exception as e:
+        print(f"Error getting films: {e.with_traceback}")
+        return []
+    ret = [discord.app_commands.Choice(name=film, value=film) for film in films if current.lower() in film.lower()]
+    random.shuffle(ret)
     return ret[:25]
 
 @bot.tree.command(name="listadd", description="add a film to your list", guild=guild)
@@ -110,7 +128,7 @@ async def add_to_list(interaction: discord.Interaction, film: str):
     await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
 
 @bot.tree.command(name="listcut", description="cut a film from your list", guild=guild)
-@discord.app_commands.autocomplete(film=filmlist_autocomplete)
+@discord.app_commands.autocomplete(film=list_autocomplete)
 async def cut_from_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
@@ -127,19 +145,15 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
     else:
         await interaction.response.send_message(f"{string.capwords(film_sanitized)} is not in your list!", ephemeral=True)
 
-@bot.tree.command(name="picklink", description="get a link to a film the club watched", guild=guild)
+@bot.tree.command(name="imdb", description="get imdb link to a film", guild=guild)
 @discord.app_commands.autocomplete(film=films_autocomplete)
-async def list_club_picks(interaction: discord.Interaction, film: str):
-    try:
-        await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{getIMDbForFilmLIKE(film)})', ephemeral=True)
-    except Exception as e:
-        await interaction.response.send_message(f"Error: {e}")
-        raise e
-
-@bot.tree.command(name="listlink", description="get a link to a film you select from your list", guild=guild)
-@discord.app_commands.autocomplete(film=filmlist_autocomplete)
 async def list_films(interaction: discord.Interaction, film: str):
     try:
+        con = FDCon()
+        imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=film)
+        if len(imdb_raw_list) > 0:
+            await interaction.response.send_message(f'[{string.capwords(film)}]({imdb_raw_list[0][0]})',ephemeral=True)
+            return
         br = mechanicalsoup.StatefulBrowser()
         br.open("http://google.com")
         form = br.select_form()
