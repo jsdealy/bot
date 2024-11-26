@@ -77,12 +77,12 @@ def select(cur: sqlite3.Cursor, *selected_cols: str, **values: Any) -> list[tupl
     selected_cols_str = f"{', '.join(selected_cols)}"
     field_list_str = f"({' AND '.join(list_of_fields)})"
     val_tup = tuple(list_of_values)
+    print(f"SQL STRING: SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};")
+    print(val_tup)
     try:
         raw_tups = cur.execute(f"SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};", val_tup).fetchall()
         return raw_tups
     except Exception as e:
-        print(f"SQL STRING: SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str};")
-        print(val_tup)
         print(f"Error: {e}")
         raise e
 
