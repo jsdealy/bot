@@ -14,6 +14,8 @@ class FDCon:
         return self._cur
     def execute(self,sql_string: str):
         return self._cur.execute(sql_string)
+    def commit(self):
+        return self._con.commit()
 
 def filmIDSelectSkeleton():
     return "(SELECT id FROM Films WHERE film_name = ?)"
@@ -36,7 +38,7 @@ def delete(cur: sqlite3.Cursor, table: str, **values: Any) -> bool:
     Author: Justin Dealy
     Github: https://github.com/jsdealy
     Description: Deletes from a table. Values 
-    cannot be empty. 
+    cannot be empty. Does not commit changes.
     """
     cur.fetchall()
     if len(values) < 1:
