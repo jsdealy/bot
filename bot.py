@@ -74,12 +74,12 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     try:
         user_id = select(con.cur(),"id",tables=["Members"], name=nameconvert(interaction.user.name))[0][0]
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error getting user_id: {e}")
         return []
     try:
         films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error getting films: {e}")
         return []
     ret = [discord.app_commands.Choice(name=film, value=film) for film in films if current.lower() in film.lower()]
     random.shuffle(ret)
