@@ -1,5 +1,6 @@
 # bot.py
 import random, re, mechanicalsoup, string, sqlite3
+from sys import exc_info
 from discord.ext import commands
 from modz.websearch import siteSearch
 from modz.emoji import discord_emojis
@@ -74,7 +75,8 @@ async def filmlist_autocomplete(interaction: discord.Interaction, current: str,)
     try:
         user_id = select(con.cur(),"id",tables=["Members"], name="justin")[0][0]
     except Exception as e:
-        print(f"Error getting user_id: {e.with_traceback}")
+        tb = exc_info()[2]
+        print(f"Error getting user_id: {e.with_traceback(tb)}")
         return []
     try:
         films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
