@@ -138,7 +138,7 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
         delete(con.cur(),"Lists",user_id=user_id,film_name=film)
         con.commit()
     except Exception as e:
-        await interaction.response.send_message(f"Error: {e}")
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
         return
     await interaction.response.send_message(f"Cut: {string.capwords(film)}", ephemeral=True)
 
@@ -166,10 +166,14 @@ async def list_films(interaction: discord.Interaction, film: str):
 async def rand(interaction: discord.Interaction):
     films = []
     try:
-        with open(f"{nameconvert(interaction.user.name)}list", "r") as rob:
-            for line in rob:
-                films += [line]
+        con = FDCon()
+        user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
+        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
         random_film = random.choice(films)
+        imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=random_film)
+        if len(imdb_raw_list) > 0:
+            await interaction.response.send_message(f'[{string.capwords(random_film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
+            return
         br = mechanicalsoup.StatefulBrowser()
         br.open("http://google.com")
         form = br.select_form()
