@@ -184,7 +184,7 @@ async def rand(interaction: discord.Interaction):
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
 
-@bot.tree.command(name="rate", description="rate a film that was watched at a movie night", guild=guild)
+@bot.tree.command(name="rate", description="rate a film that was watched on a movie night", guild=guild)
 @discord.app_commands.autocomplete(film=picks_autocomplete)
 @discord.app_commands.choices(rating=ratings)
 async def rate(interaction: discord.Interaction, film: str, rating: discord.app_commands.Choice[int]):
