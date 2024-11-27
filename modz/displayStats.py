@@ -58,7 +58,7 @@ def intToDateString(i: int) -> str:
 
 
 # Printing the last five films 
-async def lastFive() -> str:
+def lastFive() -> str:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT film_name, name, date, imdb_id FROM Members, Films, Pickers, IMDb_ids WHERE Films.id = Pickers.film_id AND \
