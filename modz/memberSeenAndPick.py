@@ -58,6 +58,7 @@ async def memberSeen(membername: str, botsayer: Botsay):
             await botsayer.say(result)
             if row_index >= length_of_returned_table or rateseek >= higher_than_all_rating_numbers:
                 break
+        print("finished")
     else:
         raise Exception("Nothing seen!")
 
