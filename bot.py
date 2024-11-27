@@ -1,5 +1,6 @@
 # bot.py
 import random, re, mechanicalsoup, string, sqlite3
+import functools
 from sys import exc_info
 from discord.ext import commands
 from modz.websearch import siteSearch
@@ -209,7 +210,7 @@ async def choose(interaction: discord.Interaction, choose_string: str):
     if len(alternatives) <= 1:
         await interaction.response.send_message("Error: The options must be separated by semicolons like a; b; c; d", ephemeral=True)
         return
-    await interaction.response.send_message(f"From {', '.join(alternatives)}... I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
+    await interaction.response.send_message(f"From {', '.join([x for x in alternatives if x != ""])}... I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
 
 @bot.tree.command(name="undopick", description="undo your picks from today", guild=guild)
 async def undo_pick(interaction: discord.Interaction):
