@@ -254,7 +254,7 @@ async def websearch(interaction: discord.Interaction, site: str, query: str):
     try:
         form.choose_submit("btnI")
         result = br.submit_selected()
-        await interaction.response.send_message(result)
+        await interaction.response.send_message(result.url)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}", ephemeral=True)
 
