@@ -211,6 +211,7 @@ async def pick_func(interaction: discord.Interaction, film: str):
 @discord.app_commands.choices(member=[discord.app_commands.Choice(name=member, value=member) for member in members])
 async def seen(interaction: discord.Interaction, member: str):
     await memberSeen(member, botsayer.setChannel(interaction.channel))
+    await interaction.response.send_message(":clapper:")
 
 @bot.tree.command(name="choose", description="choose randomly between stuff separated by semicolons", guild=guild)
 async def choose(interaction: discord.Interaction, choose_string: str):
