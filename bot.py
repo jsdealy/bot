@@ -207,11 +207,12 @@ async def pick_func(interaction: discord.Interaction, film: str):
         await botsayer.setChannel(interaction.channel).say(f"Error: {e}")
 
 
-@bot.tree.command(name="seen", description="choose randomly between stuff separated by semicolons", guild=guild)
+@bot.tree.command(name="seen", description="print a summary of a club member's ratings", guild=guild)
 @discord.app_commands.choices(member=[discord.app_commands.Choice(name=member, value=member) for member in members])
 async def seen(interaction: discord.Interaction, member: str):
     await interaction.response.send_message(":clapper:")
     await memberSeen(member, botsayer.setChannel(interaction.channel))
+
 
 @bot.tree.command(name="choose", description="choose randomly between stuff separated by semicolons", guild=guild)
 async def choose(interaction: discord.Interaction, choose_string: str):
@@ -221,7 +222,9 @@ async def choose(interaction: discord.Interaction, choose_string: str):
         return
     await interaction.response.send_message(f"From {', '.join(alternatives)}... I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
 
-
+@bot.tree.command(name="lastfive", description="print the last five picks", guild=guild)
+async def lastfive(interaction: discord.Interaction):
+    await interaction.response.send_message(lastFive())
 
 @bot.tree.command(name="undopick", description="undo your picks from today", guild=guild)
 async def undo_pick(interaction: discord.Interaction):
@@ -278,8 +281,6 @@ async def on_message(message: discord.Message):
         await rateModeStart(ratemode,True,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
 
     # stat functions <== 11/16/24 15:28:07 # 
-    if mess.startswith("lastfive"):
-        await lastFive(botsayer.setChannel(channel))
     if mess.startswith("leaderboard"):
         await leaderboard(botsayer.setChannel(channel))
     await displayStats(mess, botsay, channel)

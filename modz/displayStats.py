@@ -58,7 +58,7 @@ def intToDateString(i: int) -> str:
 
 
 # Printing the last five films 
-async def lastFive(botsayer: Botsay):
+async def lastFive() -> str:
     con = sqlite3.connect("filmdata.db")
     cur = con.cursor()
     res = cur.execute("SELECT film_name, name, date, imdb_id FROM Members, Films, Pickers, IMDb_ids WHERE Films.id = Pickers.film_id AND \
@@ -76,7 +76,7 @@ async def lastFive(botsayer: Botsay):
         {(lambda x: "the day time began" if x == 0 else intToDateString(x))(x[2])}." for x in films_raw))
     # using regex to reduce consecutive whitespace chars to a single space <== 11/10/24 11:37:50 # 
     reggy = re.compile(r'[\s]{2,}')
-    await botsayer.say(reggy.sub(' ',films))
+    return reggy.sub(' ',films)
     
 async def leaderboard(botsayer: Botsay):
     con = sqlite3.connect("filmdata.db")
