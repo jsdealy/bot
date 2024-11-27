@@ -146,6 +146,7 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
         con.commit()
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+        raise e
         return
     await interaction.response.send_message(f"Cut: {string.capwords(film)}", ephemeral=True)
 
