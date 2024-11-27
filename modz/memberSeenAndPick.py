@@ -54,7 +54,7 @@ async def memberSeen(membername: str, botsayer: Botsay):
             try:
                 print(result)
             except:
-                print("")
+                print("Some sort of problem!")
             await botsayer.say(result)
             if row_index >= length_of_returned_table or rateseek >= higher_than_all_rating_numbers:
                 break
