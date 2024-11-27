@@ -206,11 +206,11 @@ async def pick_func(interaction: discord.Interaction, film: str):
 
 @bot.tree.command(name="choose", description="choose randomly between stuff separated by semicolons", guild=guild)
 async def choose(interaction: discord.Interaction, choose_string: str):
-    alternatives = choose_string.strip().split(";")
+    alternatives = [x for x in choose_string.strip().split(";") if x != ""]
     if len(alternatives) <= 1:
         await interaction.response.send_message("Error: The options must be separated by semicolons like a; b; c; d", ephemeral=True)
         return
-    await interaction.response.send_message(f"From {', '.join([x for x in alternatives if x != ""])}... I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
+    await interaction.response.send_message(f"From {', '.join(alternatives)}... I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
 
 @bot.tree.command(name="undopick", description="undo your picks from today", guild=guild)
 async def undo_pick(interaction: discord.Interaction):
