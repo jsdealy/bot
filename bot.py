@@ -139,7 +139,7 @@ async def add_to_list(interaction: discord.Interaction, film: str):
 async def cut_from_list(interaction: discord.Interaction, film: str):
     try:
         con = FDCon()
-        if len(select(con.cur(),"id",tables=["Lists"],user_id=nameconvert(interaction.user.name),film_name=film)) < 1:
+        if len(select(con.cur(),"id",tables=["Lists, Members"],joins=["Lists.user_id=Members.id"],Members__user_id=nameconvert(interaction.user.name),film_name=film)) < 1:
             raise Exception(f"{film} is not in your list")
         user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
         delete(con.cur(),"Lists",user_id=user_id,film_name=film)
