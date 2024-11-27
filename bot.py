@@ -3,7 +3,6 @@ import random, re, mechanicalsoup, string, sqlite3
 import functools
 from sys import exc_info
 from discord.ext import commands
-from modz.websearch import siteSearch
 from modz.emoji import discord_emojis
 from typing import Any
 from modz.updateFile import updateFile
@@ -309,8 +308,6 @@ async def on_message(message: discord.Message):
 
     if mess.startswith("getcommands"):
         await getAndPrintCommands()
-
-    await siteSearch(mess, botsay, channel)
 
     if mess.startswith("!"):
         await botsayer.setChannel(channel).say("Try using an initial / instead of ! if you're trying to execute a command. :pregnant_man:")
