@@ -1,17 +1,5 @@
 import mechanicalsoup
 
-def websearch(site, str):
-    br = mechanicalsoup.StatefulBrowser()
-    br.open("http://google.com")
-    form = br.select_form()
-    form["q"] = str+f" site:{site}"
-    try:
-        form.choose_submit("btnI")
-        result = br.submit_selected()
-        return result.url
-    except:
-        return "Tarnation! Python doesn't like this link. (Maybe too many redirects.)" \
-                " Try different search keywords, or maybe try searching a different website."
 
 sites = { 'imdb': 'imdb.com', 
          'rotten': 'rottentomatoes.com', 

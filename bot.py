@@ -46,6 +46,11 @@ def doNothin():
 
 load_dotenv()
 
+sites = { 'rottentomatoes': 'rottentomatoes.com', 
+         'wikipedia': 'wikipedia.org', 
+         'google (feeling lucky)': '',
+         'justwatch': 'justwatch.com' }
+
 ratings = [
     discord.app_commands.Choice(name="A+", value = 13),
     discord.app_commands.Choice(name="A",  value = 12),
@@ -240,6 +245,20 @@ async def leaderboard_command(interaction: discord.Interaction):
     await interaction.response.send_message(":clapper:")
     await leaderboard(botsayer.setChannel(interaction.channel))
 
+@bot.tree.command(name="search", description="execute a websearch using one of various sites", guild=guild)
+@discord.app_commands.choices(site=[discord.app_commands.Choice(name=key, value=sites[key]) for key in sites.keys()])
+async def websearch(interaction: discord.Interaction, site, query: str):
+    br = mechanicalsoup.StatefulBrowser()
+    br.open("http://google.com")
+    form = br.select_form()
+    form["q"] = query+f" site:{site}" if site != "" else query
+    try:
+        form.choose_submit("btnI")
+        result = br.submit_selected()
+        await interaction.response.send_message(result)
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+
 async def getAndPrintCommands():
     bot.tree.clear_commands(guild=None)
     bot.tree.remove_command("test", guild=None)
@@ -290,7 +309,6 @@ async def on_message(message: discord.Message):
 
     if mess.startswith("getcommands"):
         await getAndPrintCommands()
-
 
     await siteSearch(mess, botsay, channel)
 
