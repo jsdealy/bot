@@ -235,6 +235,11 @@ async def undo_pick(interaction: discord.Interaction):
     except Exception as e:
         await botsayer.say(f"Error: {e}")
 
+@bot.tree.command(name="leaderboard", description="print a ranking of club films based on everyone's ratings", guild=guild)
+async def leaderboard_command(interaction: discord.Interaction):
+    await interaction.response.send_message(":clapper:")
+    await leaderboard(botsayer.setChannel(interaction.channel))
+
 async def getAndPrintCommands():
     bot.tree.clear_commands(guild=None)
     bot.tree.remove_command("test", guild=None)
@@ -281,8 +286,6 @@ async def on_message(message: discord.Message):
         await rateModeStart(ratemode,True,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
 
     # stat functions <== 11/16/24 15:28:07 # 
-    if mess.startswith("leaderboard"):
-        await leaderboard(botsayer.setChannel(channel))
     await displayStats(mess, botsay, channel)
 
     if mess.startswith("getcommands"):
