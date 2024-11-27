@@ -246,7 +246,7 @@ async def leaderboard_command(interaction: discord.Interaction):
 
 @bot.tree.command(name="search", description="execute a websearch using one of various sites", guild=guild)
 @discord.app_commands.choices(site=[discord.app_commands.Choice(name=key, value=sites[key]) for key in sites.keys()])
-async def websearch(interaction: discord.Interaction, site, query: str):
+async def websearch(interaction: discord.Interaction, site: str, query: str):
     br = mechanicalsoup.StatefulBrowser()
     br.open("http://google.com")
     form = br.select_form()
