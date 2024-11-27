@@ -203,6 +203,11 @@ async def pick_func(interaction: discord.Interaction, film: str):
     except Exception as e:
         await botsayer.setChannel(interaction.channel).say(f"Error: {e}")
 
+@bot.tree.command(name="choose", description="choose randomly between stuff separated by semicolons", guild=guild)
+async def choose(interaction: discord.Interaction, choose_string: str):
+    alternatives = choose_string.strip().split(";")
+    await interaction.response.send_message(f"I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
+
 @bot.tree.command(name="undopick", description="undo your picks from today", guild=guild)
 async def undo_pick(interaction: discord.Interaction):
     response = ""
@@ -270,9 +275,6 @@ async def on_message(message: discord.Message):
     if mess.startswith("getcommands"):
         await getAndPrintCommands()
 
-    # misc <== 11/16/24 15:28:28 # 
-    if mess.startswith("choose:"):
-        await randomChooser(message.content, channel)
 
     await siteSearch(mess, botsay, channel)
 
