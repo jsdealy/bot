@@ -64,6 +64,8 @@ ratings = [
     discord.app_commands.Choice(name="Unseen",  value = -1),
 ]
 
+memberchoice = [discord.app_commands.Choice(name=member, value=member) for member in members]
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
@@ -204,6 +206,12 @@ async def pick_func(interaction: discord.Interaction, film: str):
     except Exception as e:
         await botsayer.setChannel(interaction.channel).say(f"Error: {e}")
 
+
+@bot.tree.command(name="seen", description="choose randomly between stuff separated by semicolons", guild=guild)
+@discord.app_commands.choices(member=[discord.app_commands.Choice(name=member, value=member) for member in members])
+async def seen(interaction: discord.Interaction, member: str):
+    await memberSeen(member, botsayer.setChannel(interaction.channel))
+
 @bot.tree.command(name="choose", description="choose randomly between stuff separated by semicolons", guild=guild)
 async def choose(interaction: discord.Interaction, choose_string: str):
     alternatives = [x for x in choose_string.strip().split(";") if x != ""]
@@ -211,6 +219,8 @@ async def choose(interaction: discord.Interaction, choose_string: str):
         await interaction.response.send_message("Error: The options must be separated by semicolons like a; b; c; d", ephemeral=True)
         return
     await interaction.response.send_message(f"From {', '.join(alternatives)}... I choose {alternatives[random.randint(0,len(alternatives)-1)].strip()}! :pregnant_man:")
+
+
 
 @bot.tree.command(name="undopick", description="undo your picks from today", guild=guild)
 async def undo_pick(interaction: discord.Interaction):
@@ -267,9 +277,6 @@ async def on_message(message: discord.Message):
         await rateModeStart(ratemode,True,nameconvert(message.author.name),botsayer.setChannel(channel),tryprint)
 
     # stat functions <== 11/16/24 15:28:07 # 
-    for member in members:
-        if mess.startswith(f"{member}seen"):
-            await memberSeen(member, botsayer.setChannel(channel))
     if mess.startswith("lastfive"):
         await lastFive(botsayer.setChannel(channel))
     if mess.startswith("leaderboard"):

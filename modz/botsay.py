@@ -2,7 +2,7 @@ import string
 from typing import Self
 
 class BotsayChannel:
-    async def send(self, s: str):
+    async def send(self, s: str, silent=True):
         return
 
 class Botsay:
