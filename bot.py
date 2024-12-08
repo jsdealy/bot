@@ -149,6 +149,30 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
         return
     await interaction.response.send_message(f"Cut: {string.capwords(film)}", ephemeral=True)
 
+@bot.tree.command(name="list", description="display and search your list", guild=guild)
+@discord.app_commands.autocomplete(film=list_autocomplete)
+async def display_from_list(interaction: discord.Interaction, film: str):
+    try:
+        con = FDCon()
+        film_tup_list = select(con.cur(),r"*",tables=["Lists, Members"],joins=["Lists.user_id=Members.id"],Members__name=nameconvert(interaction.user.name),film_name=film) 
+        if len(film_tup_list) < 1:
+            raise Exception(f"{film} is not in your list")
+        else:
+            film = film_tup_list[0][0]
+        imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=film)
+        if len(imdb_raw_list) > 0:
+            await interaction.response.send_message(f'[{string.capwords(film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
+            return
+        br = mechanicalsoup.StatefulBrowser()
+        br.open("http://google.com")
+        form = br.select_form()
+        form["q"] = f"{film} site:imdb.com"
+        form.choose_submit("btnI")
+        result = br.submit_selected()
+        await interaction.response.send_message(f'[{string.capwords(film)}]({result.url})', ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+
 @bot.tree.command(name="imdb", description="get imdb link to *any* film", guild=guild)
 @discord.app_commands.autocomplete(film=films_autocomplete)
 async def list_films(interaction: discord.Interaction, film: str):
