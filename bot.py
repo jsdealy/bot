@@ -194,8 +194,8 @@ async def list_films(interaction: discord.Interaction, film: str):
         raise e
 
 @bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
-@discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Public", value = False), discord.app_commands.Choice(name="Private",  value = True) ])
-async def rand(interaction: discord.Interaction,visibility: bool):
+@discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Public", value = 1), discord.app_commands.Choice(name="Private",  value = 0) ])
+async def rand(interaction: discord.Interaction,visibility: int):
     films = []
     try:
         con = FDCon()
@@ -212,7 +212,7 @@ async def rand(interaction: discord.Interaction,visibility: bool):
         form["q"] = f"{random_film} site:imdb.com"
         form.choose_submit("btnI")
         result = br.submit_selected()
-        await interaction.response.send_message(f'[{string.capwords(random_film)}]({result.url})', ephemeral=visibility if visibility in [True,False] else False)
+        await interaction.response.send_message(f'[{string.capwords(random_film)}]({result.url})', ephemeral=True if visibility == 1 else False)
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
 
