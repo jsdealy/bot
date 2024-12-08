@@ -154,7 +154,7 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
 async def display_from_list(interaction: discord.Interaction, film: str):
     try:
         con = FDCon()
-        film_tup_list = select(con.cur(),r"*",tables=["Lists, Members"],joins=["Lists.user_id=Members.id"],Members__name=nameconvert(interaction.user.name),film_name=film) 
+        film_tup_list = select(con.cur(),r"Lists.film_name",tables=["Lists, Members"],joins=["Lists.user_id=Members.id"],Members__name=nameconvert(interaction.user.name),film_name=film) 
         if len(film_tup_list) < 1:
             raise Exception(f"{film} is not in your list")
         else:
