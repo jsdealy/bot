@@ -1,6 +1,20 @@
-import sqlite3,string
+import sqlite3,string,os
 from datetime import datetime
 from typing import Any, List
+
+class MDCon:
+    def __init__(self) -> None:
+        moviedata_with_path = f'{os.getenv("__MOVIE_DATABASE_PATH")}/moviedatabase.db'
+        self._con = sqlite3.connect(moviedata_with_path)
+        self._cur = self._con.cursor()
+    def __del__(self):
+        self._con.close()
+    def cur(self) -> sqlite3.Cursor:
+        return self._cur
+    def execute(self,sql_string: str):
+        return self._cur.execute(sql_string)
+    def commit(self):
+        return self._con.commit()
 
 class FDCon:
     def __init__(self) -> None:

@@ -50,7 +50,6 @@ langDict = {
     "lv": "latvian",
     "mk": "macedonian",
     "ml": "malayalam",
-    "mn": "mongolian",
     "mr": "marathi",
     "ms": "malay",
     "mt": "maltese",
@@ -85,7 +84,7 @@ langDict = {
     "uz": "uzbek",
     "vi": "vietnamese",
     "wo": "wolof",
-    "xx": "no language specified",
+    "any": "any language",
     "zh": "chinese (mandarin)",
     "zu": "zulu" 
     }
