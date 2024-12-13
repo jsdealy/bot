@@ -75,11 +75,8 @@ genres = [
 "Horror",
 "Musical",
 "Western",
-"Reality-TV",
-"Talk-Show",
 "Film-Noir",
 "Game-Show",
-"Adult ",
 ]
 
 ratings = [
