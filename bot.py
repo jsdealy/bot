@@ -249,9 +249,9 @@ async def list_films(interaction: discord.Interaction, film: str):
 async def grab(interaction: discord.Interaction,genre: str,language: str,visibility: int):
     try:
         con = MDCon()
+        channel = interaction.channel
         cannes_films = []
         gen_films = []
-        await interaction.response.defer()
         if not language.startswith("any") and not genre.lower().startswith("any"):
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Genres","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst","Cannes.tconst=Genres.tconst", "Languages.tconst=Cannes.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language,Genres__genre=genre)
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"],Genres__genre=genre,Languages__lang=language)
@@ -266,7 +266,10 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"],Genres__genre=genre)
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_films + gen_films)])}"
         res = res if len(res)>0 else "No results! :pregnant_man:"
-        await interaction.followup.send(res,ephemeral=True if visibility == 0 else False)
+        if not interaction.is_expired():
+            await interaction.response.send_message(res,ephemeral=True if visibility == 0 else False)
+        else:
+            await botsayer.setChannel(channel).say(res)
     except Exception as e:
         try:
             await interaction.response.send_message(f"Error: {e}")
