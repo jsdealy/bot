@@ -24,6 +24,8 @@ import discord
 from dotenv import load_dotenv
 
 CANNES_LIMIT = 1
+CRITERION_LIMIT = CANNES_LIMIT + 1
+GEN_LIMIT = CANNES_LIMIT + 1
 
 members = getMembers()
 
@@ -254,17 +256,21 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         gen_films = []
         if not language.startswith("any") and not genre.lower().startswith("any"):
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Genres","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst","Cannes.tconst=Genres.tconst", "Languages.tconst=Cannes.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language,Genres__genre=genre)
-            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"],Genres__genre=genre,Languages__lang=language)
+            criterion_films = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Films","Genres","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Criterion.tconst","Criterion.tconst=Genres.tconst", "Languages.tconst=Criterion.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CRITERION_LIMIT}"],Languages__lang=language,Genres__genre=genre)
+            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Genres__genre=genre,Languages__lang=language)
         elif not language.startswith("any") and genre.lower().startswith("any"):
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst", "Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language)
-            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"],Languages__lang=language)
+            criterion_films = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Films","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Criterion.tconst", "Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CRITERION_LIMIT}"],Languages__lang=language)
+            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Languages__lang=language)
         elif language.startswith("any") and genre.lower().startswith("any"):
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"])
-            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings"],joins=["Ratings.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"])
+            criterion_films = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Films","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Criterion.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CRITERION_LIMIT}"])
+            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings"],joins=["Ratings.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"])
         else:
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst","Cannes.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Genres__genre=genre)
-            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"],Genres__genre=genre)
-        res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_films + gen_films)])}"
+            criterion_films = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Criterion.tconst","Criterion.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CRITERION_LIMIT}"],Genres__genre=genre)
+            gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Genres__genre=genre)
+        res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_films + criterion_films + gen_films)])}"
         res = res if len(res)>0 else "No results! :pregnant_man:"
         if not interaction.is_expired():
             await interaction.response.send_message(res,ephemeral=True if visibility == 0 else False)
