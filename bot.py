@@ -266,6 +266,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_films + gen_films)])}"
         print(f"res:>{res}<")
         res = res if len(res.strip('\n').strip())>0 else "No results! :pregnant_man:"
+        print(len(res.strip('\n')))
         print(len(res.strip('\n'))>0)
         await interaction.response.send_message(res,ephemeral=True if visibility == 0 else False)
     except Exception as e:
