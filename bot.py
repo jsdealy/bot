@@ -138,7 +138,7 @@ async def genre_autocomplete(interaction: discord.Interaction, current: str,) ->
 async def lang_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     ret = [discord.app_commands.Choice(name=string.capwords(langDict[key]), value=key) for key in langDict.keys() if current.lower() in langDict[key].lower()]
     random.shuffle(ret)
-    return [discord.app_commands.Choice(name="Any Language",value="any")]+ret[:24]
+    return ret[0:1]+[discord.app_commands.Choice(name="Any Language",value="any")]+ret[1:24]
 
 async def list_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     con = FDCon()
