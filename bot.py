@@ -23,7 +23,7 @@ import os
 import discord
 from dotenv import load_dotenv
 
-CANNES_LIMIT = 2
+CANNES_LIMIT = 1
 
 members = getMembers()
 
