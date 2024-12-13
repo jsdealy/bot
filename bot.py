@@ -133,7 +133,7 @@ async def picks_autocomplete(interaction: discord.Interaction, current: str,) ->
 async def genre_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     ret = [discord.app_commands.Choice(name=genre, value=genre) for genre in genres if current.lower() in genre.lower()]
     random.shuffle(ret)
-    return [discord.app_commands.Choice(name="Any Genre", value="Any Genre")]+ret[:24]
+    return ret[1:2]+[discord.app_commands.Choice(name="Any Genre", value="Any Genre")]+ret[2:24]
 
 async def lang_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     ret = [discord.app_commands.Choice(name=string.capwords(langDict[key]), value=key) for key in langDict.keys() if current.lower() in langDict[key].lower()]
