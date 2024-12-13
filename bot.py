@@ -23,8 +23,8 @@ import os
 import discord
 from dotenv import load_dotenv
 
-CANNES_LIMIT = 4
-GEN_LIMIT = 1
+CANNES_LIMIT = 3
+GEN_LIMIT = 2
 
 members = getMembers()
 
@@ -265,8 +265,6 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         else:
             cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Cannes","Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Criterion.tconst=Films.tconst","Films.tconst=Cannes.tconst","Cannes.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Genres__genre=genre)
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Genres__genre=genre)
-        print(len(cannes_or_criterion))
-        print(len(gen_films))
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_or_criterion + gen_films)])}"
         res = res if len(res)>0 else "No results! :pregnant_man:"
         if not interaction.is_expired():
