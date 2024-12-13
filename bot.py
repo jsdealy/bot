@@ -271,7 +271,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         print(f"res:>{res}<")
         print(len(res))
         # await interaction.response.send_message("test",ephemeral=True if visibility == 0 else False)
-        await interaction.response.send_message(res,ephemeral=True if visibility == 0 else False)
+        await interaction.followup.send(res,ephemeral=True if visibility == 0 else False)
     except Exception as e:
         try:
             await interaction.response.send_message(f"Error: {e}")
