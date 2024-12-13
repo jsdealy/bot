@@ -100,7 +100,7 @@ def select(cur: sqlite3.Cursor, *selected_cols: str, **values: Any) -> list[tupl
     if "joins" in values.keys():
         join_table = values.pop("joins")
     if "qualifiers" in values.keys():
-        qualifier_table = values.pop("joins")
+        qualifier_table = values.pop("qualifiers")
     list_of_fields: list[str] = [f"{key.replace("__",".")}=?" for key in values.keys()]
     list_of_values = [values[key] for key in values.keys()]
     table_list_str = f"{', '.join(table_list)}"
