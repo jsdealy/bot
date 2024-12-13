@@ -225,8 +225,8 @@ async def list_films(interaction: discord.Interaction, film: str):
         raise e
 
 @bot.tree.command(name="grab", description="grab a selection of random films meeting search criteria", guild=guild)
-@discord.app_commands.choices(genre=[discord.app_commands.Choice(name=genre, value=genre) for genre in genres])
-@discord.app_commands.choices(language=[discord.app_commands.Choice(name=string.capwords(langDict[key]), value=key) for key in langDict.keys()])
+@discord.app_commands.choices(genre=[discord.app_commands.Choice(name=genre, value=genre) for genre in genres][:25])
+@discord.app_commands.choices(language=[discord.app_commands.Choice(name=string.capwords(langDict[key]), value=key) for key in langDict.keys()][:25])
 @discord.app_commands.choices(visibility=[discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1)])
 async def grab(interaction: discord.Interaction,genre: str,language: str,visibility: int):
     films = []
