@@ -54,6 +54,7 @@ sites = { 'rottentomatoes': 'rottentomatoes.com',
          'justwatch': 'justwatch.com' }
 
 genres = [
+"Any Genre",
 "Comedy",
 "Fantasy",
 "Drama",
@@ -133,12 +134,20 @@ async def picks_autocomplete(interaction: discord.Interaction, current: str,) ->
 async def genre_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     ret = [discord.app_commands.Choice(name=genre, value=genre) for genre in genres if current.lower() in genre.lower()]
     random.shuffle(ret)
-    return ret[0:1]+[discord.app_commands.Choice(name="Any Genre", value="Any Genre")]+ret[1:24]
+    if discord.app_commands.Choice(name="Any Genre", value="Any Genre") in ret:
+        dummy = ret[0]
+        ret[0] = ret[ret.index(discord.app_commands.Choice(name="Any Genre", value="Any Genre"))]
+        ret.append(dummy)
+    return ret[:25]
 
 async def lang_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     ret = [discord.app_commands.Choice(name=string.capwords(langDict[key]), value=key) for key in langDict.keys() if current.lower() in langDict[key].lower()]
     random.shuffle(ret)
-    return ret[0:1]+[discord.app_commands.Choice(name="Any Language",value="any")]+ret[1:24]
+    if discord.app_commands.Choice(name="Any Language", value="any") in ret:
+        dummy = ret[0]
+        ret[0] = ret[ret.index(discord.app_commands.Choice(name="Any Language", value="any"))]
+        ret.append(dummy)
+    return ret[:25]
 
 async def list_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     con = FDCon()

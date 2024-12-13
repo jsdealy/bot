@@ -84,6 +84,7 @@ langDict = {
     "uz": "uzbek",
     "vi": "vietnamese",
     "wo": "wolof",
+    "any": "any language",
     "zh": "chinese (mandarin)",
     "zu": "zulu" 
     }
