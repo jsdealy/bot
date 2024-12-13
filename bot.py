@@ -270,7 +270,13 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         else:
             await interaction.response.send_message("No results! Try a different grab. :pregnant_man:",ephemeral=True if visibility == 0 else False)
     except Exception as e:
-        await interaction.response.send_message(f"Error: {e}")
+        try:
+            await interaction.response.send_message(f"Error: {e}")
+        except Exception as e1:
+            try:
+                await botsayer.setChannel(interaction.channel).say(f"Error: {e1}")
+            except Exception as e2:
+                print(f"ERROR: {e2}")
 
 @bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
 @discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1) ])
