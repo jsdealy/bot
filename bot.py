@@ -18,6 +18,7 @@ from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getOrCreateAndGetUs
 from modz.buttonTest import buttonTest
 from modz.randomChooser import randomChooser
 from modz.sqliteHelpers import getAllPicks, FDCon
+from modz.langDict import langDict
 import os
 import discord
 from dotenv import load_dotenv
@@ -49,6 +50,36 @@ sites = { 'rottentomatoes': 'rottentomatoes.com',
          'wikipedia': 'wikipedia.org', 
          'google (feeling lucky)': '',
          'justwatch': 'justwatch.com' }
+
+genres = [
+"Comedy",
+"Fantasy",
+"Drama",
+"Family",
+"Documentary",
+"Music",
+"Thriller",
+"Crime",
+"Action",
+"Adventure",
+"Biography",
+"Romance",
+"News",
+"Sport",
+"Animation",
+"War",
+"History",
+"Mystery",
+"Sci-Fi",
+"Horror",
+"Musical",
+"Western",
+"Reality-TV",
+"Talk-Show",
+"Film-Noir",
+"Game-Show",
+"Adult ",
+]
 
 ratings = [
     discord.app_commands.Choice(name="A+", value = 13),
@@ -192,6 +223,29 @@ async def list_films(interaction: discord.Interaction, film: str):
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
         raise e
+
+@bot.tree.command(name="grab", description="grab a selection of random films meeting search criteria", guild=guild)
+@discord.app_commands.choices(genre=[discord.app_commands.Choice(name=genre, value=genre) for genre in genres])
+@discord.app_commands.choices(language=[discord.app_commands.Choice(name=string.capwords(langDict[key]), value=key) for key in langDict.keys()])
+@discord.app_commands.choices(visibility=[discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1)])
+async def grab(interaction: discord.Interaction,genre: str,language: str,visibility: int):
+    films = []
+    try:
+        con = FDCon()
+        films = select(con.cur(),"tconst",tables=["Cannes","Genres","Languages"],joins=["Cannes.tconst=Genres.tconst", "Languages.tconst=Cannes.tconst"],qualifiers=["ORDER BY RANDOM() LIMIT 5"])
+        # if len(imdb_raw_list) > 0:
+        #     await interaction.response.send_message(f'[{string.capwords(random_film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
+        #     return
+        # br = mechanicalsoup.StatefulBrowser()
+        # br.open("http://google.com")
+        # form = br.select_form()
+        # form["q"] = f"{random_film} site:imdb.com"
+        # form.choose_submit("btnI")
+        # result = br.submit_selected()
+        # await interaction.response.send_message(f'[{string.capwords(random_film)}]({result.url})', ephemeral=False if visibility == 1 else True)
+        await interaction.response.send_message(f"{'\n'.join([x[0] for x in films])}")
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}")
 
 @bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
 @discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1) ])
