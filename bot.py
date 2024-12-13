@@ -264,10 +264,11 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst","Cannes.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Genres__genre=genre)
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {5-len(cannes_films)}"],Genres__genre=genre)
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_films + gen_films)])}"
-        print("response: ",res)
         if len(res.strip()) > 0:
+            print('a')
             await interaction.response.send_message(res,ephemeral=True if visibility == 0 else False)
         else:
+            print('b')
             await interaction.response.send_message("No results! Try a different grab. :pregnant_man:",ephemeral=True if visibility == 0 else False)
     except Exception as e:
         try:
