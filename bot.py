@@ -75,11 +75,8 @@ genres = [
 "Horror",
 "Musical",
 "Western",
-"Reality-TV",
-"Talk-Show",
 "Film-Noir",
 "Game-Show",
-"Adult ",
 ]
 
 ratings = [
@@ -268,12 +265,10 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
 @bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
 @discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1) ])
 async def rand(interaction: discord.Interaction,visibility: int):
-    films = []
     try:
         con = FDCon()
         user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
-        films = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],user_id=user_id)]
-        random_film = random.choice(films)
+        random_film = [tup[0] for tup in select(con.cur(),"film_name",tables=["Lists"],qualifiers=["ORDER BY RANDOM() LIMIT 1"],user_id=user_id)][0]
         imdb_raw_list = select(con.cur(),"imdb_id", tables=["IMDb_ids","Films"], joins=["IMDb_ids.film_id=Films.id"], film_name=random_film)
         if len(imdb_raw_list) > 0:
             await interaction.response.send_message(f'[{string.capwords(random_film)}](http://www.imdb.com/title/{imdb_raw_list[0][0]})',ephemeral=True)
