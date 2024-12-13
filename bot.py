@@ -270,6 +270,9 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
             cannes_films = select(con.cur(),"Films.title","Films.tconst",tables=["Cannes","Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Cannes.tconst","Cannes.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Genres__genre=genre)
             criterion_films = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Criterion.tconst","Criterion.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CRITERION_LIMIT}"],Genres__genre=genre)
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Genres__genre=genre)
+        print(len(cannes_films))
+        print(len(criterion_films))
+        print(len(gen_films))
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_films + criterion_films + gen_films)])}"
         res = res if len(res)>0 else "No results! :pregnant_man:"
         if not interaction.is_expired():
