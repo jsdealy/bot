@@ -24,8 +24,8 @@ import discord
 from dotenv import load_dotenv
 
 CANNES_LIMIT = 1
-CRITERION_LIMIT = CANNES_LIMIT + 1
-GEN_LIMIT = CANNES_LIMIT + 1
+CRITERION_LIMIT = 2
+GEN_LIMIT = 2
 
 members = getMembers()
 
