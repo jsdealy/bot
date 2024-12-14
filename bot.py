@@ -253,20 +253,21 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         channel = interaction.channel
         cannes_films = []
         gen_films = []
-        # lang and genre specified <== 12/13/24 17:54:01 # 
         # await interaction.response.defer()
+
+        # lang and genre specified <== 12/13/24 17:54:01 # 
         if not language.startswith("any") and not genre.lower().startswith("any"):
-            cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion", "Cannes","Films","Genres","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst", "Languages.tconst=Films.tconst", "(Criterion.tconst=Films.tconst OR Films.tconst=Cannes.tconst)"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language,Genres__genre=genre)
+            cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst", "Languages.tconst=Films.tconst"],qualifiers=[f"AND Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion) AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language,Genres__genre=genre)
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Genres__genre=genre,Languages__lang=language)
-            # lang specified, any genre <== 12/13/24 17:54:14 # 
+        # lang specified, any genre <== 12/13/24 17:54:14 # 
         elif not language.startswith("any") and genre.lower().startswith("any"):
-            cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Cannes","Films","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst", "Languages.tconst=Films.tconst", "(Criterion.tconst=Films.tconst OR Cannes.tconst=Films.tconst)"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language)
+            cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Languages","Ratings"],joins=["Ratings.tconst=Films.tconst", "Languages.tconst=Films.tconst"],qualifiers=[f"AND Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion) AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],Languages__lang=language)
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings","Languages"],joins=["Ratings.tconst=Films.tconst","Languages.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Languages__lang=language)
-            # any lang, any genre<== 12/13/24 17:54:25 # 
+        # any lang, any genre<== 12/13/24 17:54:25 # 
         elif language.startswith("any") and genre.lower().startswith("any"):
-            cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Criterion","Cannes","Films","Ratings"],joins=["Ratings.tconst=Films.tconst","(Criterion.tconst=Films.tconst OR Cannes.tconst=Films.tconst)"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"])
+            cannes_or_criterion = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings"],joins=["Ratings.tconst=Films.tconst"],qualifiers=[f"AND Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion) AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"])
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Ratings"],joins=["Ratings.tconst=Films.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"])
-            # any lang, genre specified <== 12/13/24 17:54:53 # 
+        # any lang, genre specified <== 12/13/24 17:54:53 # 
         else:
             con.cur().fetchall()
             con.cur().execute(f"SELECT Films.title, Films.tconst FROM Films JOIN Ratings ON Films.tconst=Ratings.tconst JOIN Genres ON Films.tconst=Genres.tconst WHERE Genres.genre=? AND Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion) AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}",(genre,));
