@@ -269,7 +269,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
             # any lang, genre specified <== 12/13/24 17:54:53 # 
         else:
             con.cur().fetchall()
-            con.cur().execute(f"SELECT Films.title, Films.tconst FROM Films,Cannes,Criterion JOIN Ratings ON Films.tconst=Ratings.tconst JOIN Genres ON Films.tconst=Genres.tconst WHERE (Cannes.tconst=Films.tconst OR Criterion.tconst=Films.tconst) AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}");
+            con.cur().execute(f"SELECT Films.title, Films.tconst FROM Films,Cannes,Criterion JOIN Ratings ON Films.tconst=Ratings.tconst JOIN Genres ON Films.tconst=Genres.tconst WHERE Genres.genre=? AND (Cannes.tconst=Films.tconst OR Criterion.tconst=Films.tconst) AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {CANNES_LIMIT}",(genre,));
             cannes_or_criterion = con.cur().fetchall()
             gen_films = select(con.cur(),"Films.title","Films.tconst",tables=["Films","Genres","Ratings"],joins=["Ratings.tconst=Films.tconst","Films.tconst=Genres.tconst"],qualifiers=[f"AND Ratings.rating > 6.5 AND Ratings.numVotes > 3000 ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],Genres__genre=genre)
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_or_criterion + gen_films)])}"
