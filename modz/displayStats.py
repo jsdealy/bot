@@ -85,8 +85,6 @@ async def leaderboard(botsayer: Botsay):
     film_rating_raw = res.fetchall()
     res_imdb_search = cur.execute("SELECT Films.film_name, imdb_id FROM Films, IMDb_ids WHERE Films.id = IMDb_ids.film_id;")
     imdb_rating_raw = res_imdb_search.fetchall()
-    print(film_rating_raw)
-    print(imdb_rating_raw)
     con.close()
     film_dicts: dict[str,list[int]] = {}
     imdb_dicts: dict[str,int] = {}
@@ -135,20 +133,19 @@ async def leaderboard(botsayer: Botsay):
                 group_seeker = film_data_list[row_index][1]
             except:
                 await botsayer.say(message)
-                print(message)
-                print("Done")
+                # print(message)
+                # print("Done")
                 superbreak_off = False
         if superbreak_off:
-            print(message)
+            # print(message)
             await botsayer.say(message)
             message = ""
             group_num += 1
             group_score = group_seeker
         else:
             break
+
     # now doing member averages
-
-
 
 
 async def displayStats(mess, botsay, channel):
