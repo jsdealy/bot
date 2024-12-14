@@ -122,7 +122,7 @@ def select(cur: sqlite3.Cursor, *selected_cols: str, **values: Any) -> list[tupl
     field_list_str = f"{' AND '.join(join_table + list_of_fields)}"
     qualifier_list_str = f"{' '.join(qualifier_table)}"
     val_tup = tuple(list_of_values)
-    print(f"SQL STRING: SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str} {qualifier_list_str};")
+    # print(f"SQL STRING: SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str} {qualifier_list_str};")
     # print(val_tup)
     try:
         raw_tups = cur.execute(f"SELECT {selected_cols_str} FROM {table_list_str} WHERE {field_list_str} {qualifier_list_str};", val_tup).fetchall()

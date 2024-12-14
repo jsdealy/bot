@@ -172,6 +172,7 @@ async def list_autocomplete(interaction: discord.Interaction, current: str,) -> 
 async def add_to_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
+    print(username, "used listadd")
     try:
         user_id = getOrCreateAndGetUserID(username)
         con = sqlite3.connect("filmdata.db")
@@ -202,6 +203,7 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
 @bot.tree.command(name="list", description="display and search your list", guild=guild)
 @discord.app_commands.autocomplete(film=list_autocomplete)
 async def display_from_list(interaction: discord.Interaction, film: str):
+    print(interaction.user.name, "used list")
     try:
         con = FDCon()
         film_tup_list = select(con.cur(),r"Lists.film_name",tables=["Lists, Members"],joins=["Lists.user_id=Members.id"],Members__name=nameconvert(interaction.user.name),film_name=film) 
@@ -249,6 +251,7 @@ async def list_films(interaction: discord.Interaction, film: str):
 @discord.app_commands.choices(visibility=[discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1)])
 async def grab(interaction: discord.Interaction,genre: str,language: str,visibility: int):
     try:
+        print(interaction.user.name, "used grab")
         con = MDCon()
         channel = interaction.channel
         cannes_films = []
@@ -371,6 +374,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
 @bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
 @discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1) ])
 async def rand(interaction: discord.Interaction,visibility: int):
+    print(interaction.user.name, "used rand")
     try:
         con = FDCon()
         user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
