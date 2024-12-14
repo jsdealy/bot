@@ -414,7 +414,7 @@ async def pick_func(interaction: discord.Interaction, film: str):
 
 
 @bot.tree.command(name="seen", description="print a summary of a club member's ratings", guild=guild)
-@discord.app_commands.choices(member=[discord.app_commands.Choice(name=member, value=member) for member in members])
+@discord.app_commands.choices(member=[discord.app_commands.Choice(name=string.capwords(member), value=member) for member in members])
 async def seen(interaction: discord.Interaction, member: str):
     await interaction.response.send_message(":clapper:")
     await memberSeen(member, botsayer.setChannel(interaction.channel))

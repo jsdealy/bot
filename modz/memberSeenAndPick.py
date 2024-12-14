@@ -38,7 +38,7 @@ async def memberSeen(membername: str, botsayer: Botsay):
         rateseek = rategroup
         row_index = 0
         while True:
-            result = f"**{membername}'s {numToRating(rategroup).capitalize()} Films**\n"
+            result = f"**{string.capwords(membername)}'s {numToRating(rategroup).capitalize()} Films**\n"
             while row_index < length_of_returned_table and rateseek == rategroup:
                 if film_names_and_ratings_raw[row_index][0] in imdb_dicts.keys():
                     result = result+f"[{string.capwords(film_names_and_ratings_raw[row_index][0])}](<http://www.imdb.com/title/{imdb_dicts[film_names_and_ratings_raw[row_index][0]]}>)\n"
