@@ -295,7 +295,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                          "Films.tconst",
                                          tables=["Films","Languages","Ratings"],
                                          joins=["Ratings.tconst=Films.tconst",
-                                                "Languages.tconst=Films.tconst"
+                                                "Languages.tconst=Films.tconst",
                                                 "Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion)",
                                                 "Ratings.rating > 6.5",
                                                 "Ratings.numVotes > 3000"],
