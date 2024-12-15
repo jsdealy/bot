@@ -137,8 +137,9 @@ async def genre_autocomplete(interaction: discord.Interaction, current: str,) ->
     random.shuffle(ret)
     if discord.app_commands.Choice(name="Any Genre", value="Any Genre") in ret:
         dummy = ret[0]
-        ret[0] = ret[ret.index(discord.app_commands.Choice(name="Any Genre", value="Any Genre"))]
-        ret.append(dummy)
+        repind = ret.index(discord.app_commands.Choice(name="Any Genre", value="Any Genre"))
+        ret[0] = ret[repind]
+        ret[repind] = dummy
     return ret[:25]
 
 async def lang_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
@@ -146,8 +147,9 @@ async def lang_autocomplete(interaction: discord.Interaction, current: str,) -> 
     random.shuffle(ret)
     if discord.app_commands.Choice(name="Any Language", value="any") in ret:
         dummy = ret[0]
-        ret[0] = ret[ret.index(discord.app_commands.Choice(name="Any Language", value="any"))]
-        ret.append(dummy)
+        repind = ret.index(discord.app_commands.Choice(name="Any Language", value="any"))
+        ret[0] = ret[repind]
+        ret[repind] = dummy
     return ret[:25]
 
 async def list_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
