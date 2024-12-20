@@ -173,7 +173,6 @@ async def list_autocomplete(interaction: discord.Interaction, current: str,) -> 
 async def add_to_list(interaction: discord.Interaction, film: str):
     film_sanitized = film.lower().strip().strip('\n')
     username = nameconvert(interaction.user.name)
-    log(username,"listadd")
     try:
         user_id = getOrCreateAndGetUserID(username)
         con = sqlite3.connect("filmdata.db")
@@ -185,6 +184,7 @@ async def add_to_list(interaction: discord.Interaction, film: str):
         await interaction.response.send_message(f"Error: {e}", ephemeral=True)
         return
     await interaction.response.send_message(f"Added: {string.capwords(film_sanitized)}", ephemeral=True)
+    log(username,"listadd")
 
 @bot.tree.command(name="listcut", description="cut a film from your list", guild=guild)
 @discord.app_commands.autocomplete(film=list_autocomplete)
@@ -204,7 +204,6 @@ async def cut_from_list(interaction: discord.Interaction, film: str):
 @bot.tree.command(name="list", description="display and search your list", guild=guild)
 @discord.app_commands.autocomplete(film=list_autocomplete)
 async def display_from_list(interaction: discord.Interaction, film: str):
-    log(interaction.user.name,"list")
     try:
         con = FDCon()
         film_tup_list = select(con.cur(),r"Lists.film_name",tables=["Lists, Members"],joins=["Lists.user_id=Members.id"],Members__name=nameconvert(interaction.user.name),film_name=film) 
@@ -223,6 +222,7 @@ async def display_from_list(interaction: discord.Interaction, film: str):
         form.choose_submit("btnI")
         result = br.submit_selected()
         await interaction.response.send_message(f'[{string.capwords(film)}]({result.url})', ephemeral=True)
+        log(interaction.user.name,"list")
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}", ephemeral=True)
 
@@ -252,7 +252,6 @@ async def list_films(interaction: discord.Interaction, film: str):
 @discord.app_commands.choices(visibility=[discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1)])
 async def grab(interaction: discord.Interaction,genre: str,language: str,visibility: int):
     try:
-        log(interaction.user.name, "grab")
         con = MDCon()
         channel = interaction.channel
         cannes_films = []
@@ -363,6 +362,8 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         else:
             await botsayer.setChannel(channel).say(res)
 
+        log(interaction.user.name, "grab")
+
     except Exception as e:
         try:
             await interaction.response.send_message(f"Error: {e}")
@@ -375,7 +376,6 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
 @bot.tree.command(name="rand", description="get an imdb link to a random film from your list", guild=guild)
 @discord.app_commands.choices(visibility=[ discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1) ])
 async def rand(interaction: discord.Interaction,visibility: int):
-    log(interaction.user.name, "rand")
     try:
         con = FDCon()
         user_id = select(con.cur(),"id",tables=["Members"],name=nameconvert(interaction.user.name))[0][0]
@@ -391,6 +391,7 @@ async def rand(interaction: discord.Interaction,visibility: int):
         form.choose_submit("btnI")
         result = br.submit_selected()
         await interaction.response.send_message(f'[{string.capwords(random_film)}]({result.url})', ephemeral=False if visibility == 1 else True)
+        log(interaction.user.name, "rand")
     except Exception as e:
         await interaction.response.send_message(f"Error: {e}")
 
