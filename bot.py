@@ -28,7 +28,7 @@ attendees = members
 botsayer = Botsay()
 
 def log(user: str,function: str):
-    with open(f"log{today()}.txt","a") as logfile:
+    with open("log.txt","a") as logfile:
         logfile.write(f"{datetime.datetime.now()}: {user} used {function}\n")
 
 def tryprint(str):
