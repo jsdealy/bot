@@ -1,11 +1,7 @@
 # bot.py
-import random, re, mechanicalsoup, string, sqlite3
-import functools
-from sys import exc_info
+import random,mechanicalsoup,string,sqlite3,datetime
 from discord.ext import commands
 from modz.emoji import discord_emojis
-from typing import Any
-from modz.updateFile import updateFile
 from modz.nameconvert import nameconvert
 from modz.gptRec import gptRec
 from modz.help import help
@@ -16,7 +12,6 @@ from modz.botsay import botsay, Botsay
 from modz.memberSeenAndPick import memberSeen
 from modz.sqliteHelpers import getMembers,getIMDbForFilmLIKE,getOrCreateAndGetUserID,insert,select,getUserID,delete,today
 from modz.buttonTest import buttonTest
-from modz.randomChooser import randomChooser
 from modz.sqliteHelpers import getAllPicks,FDCon,MDCon
 from modz.langDict import langDict
 import os
@@ -34,7 +29,7 @@ botsayer = Botsay()
 
 def log(user: str,function: str):
     with open(f"log{today()}.txt","a") as logfile:
-        logfile.write(f"{user} used {function}\n")
+        logfile.write(f"{datetime.datetime.now()}: {user} used {function}\n")
 
 def tryprint(str):
     try: 
