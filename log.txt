@@ -2,3 +2,16 @@
 2024-12-20 16:48:36.396511: jdealy used grab
 2024-12-20 16:51:27.566420: justin used listadd
 2024-12-20 17:33:37.303229: justin used listadd
+2024-12-23 11:58:50.717228: justin used listadd
+2024-12-23 11:59:30.083907: justin used listadd
+2024-12-23 11:59:40.723055: justin used listadd
+2024-12-23 11:59:56.550209: justin used listadd
+2024-12-23 12:00:06.469161: jdealy used list
+2024-12-24 08:55:43.739110: justin used listadd
+2024-12-25 09:59:42.767522: justin used listadd
+2024-12-27 04:02:35.973630: taylor used listadd
+2024-12-27 04:04:03.557275: taylor used listadd
+2024-12-29 14:11:50.595446: jdealy used list
+2025-01-01 21:38:34.998453: justin used listadd
+2025-01-01 21:38:41.408732: jdealy used rand
+2025-01-01 21:42:03.859236: justin used listadd
