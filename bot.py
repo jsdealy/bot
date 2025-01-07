@@ -18,8 +18,6 @@ import os
 import discord
 from dotenv import load_dotenv
 
-CANNES_LIMIT = 3
-GEN_LIMIT = 2
 
 members = getMembers()
 
@@ -257,6 +255,9 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
         cannes_films = []
         gen_films = []
         # await interaction.response.defer()
+        cannes_limit = random.randint(1,4)
+        gen_limit = 5 - cannes_limit
+
 
         # lang and genre specified <== 12/13/24 17:54:01 # 
         if not language.startswith("any") and not genre.lower().startswith("any"):
@@ -270,7 +271,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                                 "Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion)",
                                                 "Ratings.rating > 6.5",
                                                 "Ratings.numVotes > 3000"],
-                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],
+                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {cannes_limit}"],
                                          Languages__lang=language,
                                          Genres__genre=genre)
             gen_films = select(con.cur(),
@@ -282,7 +283,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                       "Languages.tconst=Films.tconst",
                                       "Ratings.rating > 6.5",
                                       "Ratings.numVotes > 3000"],
-                               qualifiers=[f"ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],
+                               qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"],
                                Genres__genre=genre,
                                Languages__lang=language)
 
@@ -297,7 +298,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                                 "Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion)",
                                                 "Ratings.rating > 6.5",
                                                 "Ratings.numVotes > 3000"],
-                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],
+                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {cannes_limit}"],
                                          Languages__lang=language)
             gen_films = select(con.cur(),
                                "Films.title",
@@ -307,7 +308,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                       "Languages.tconst=Films.tconst", 
                                       "Ratings.rating > 6.5",
                                       "Ratings.numVotes > 3000"],
-                               qualifiers=[f"ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],
+                               qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"],
                                Languages__lang=language)
 
         # any lang, any genre<== 12/13/24 17:54:25 # 
@@ -320,7 +321,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                                 "Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion)",
                                                 "Ratings.rating > 6.5",
                                                 "Ratings.numVotes > 3000"],
-                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"])
+                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {cannes_limit}"])
             gen_films = select(con.cur(),
                                "Films.title",
                                "Films.tconst",
@@ -328,7 +329,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                joins=["Ratings.tconst=Films.tconst",
                                       "Ratings.rating > 6.5",
                                       "Ratings.numVotes > 3000"],
-                               qualifiers=[f"ORDER BY RANDOM() LIMIT {GEN_LIMIT}"])
+                               qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"])
 
         # any lang, genre specified <== 12/13/24 17:54:53 # 
         else:
@@ -341,7 +342,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                                 "Films.tconst IN (SELECT tconst FROM Cannes UNION SELECT tconst FROM Criterion)",
                                                 "Ratings.rating > 6.5",
                                                 "Ratings.numVotes > 3000"],
-                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {CANNES_LIMIT}"],
+                                         qualifiers=[f"ORDER BY RANDOM() LIMIT {cannes_limit}"],
                                          Genres__genre=genre)
             gen_films = select(con.cur(),
                                "Films.title",
@@ -351,7 +352,7 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                       "Films.tconst=Genres.tconst", 
                                       "Ratings.rating > 6.5",
                                       "Ratings.numVotes > 3000"],
-                               qualifiers=[f"ORDER BY RANDOM() LIMIT {GEN_LIMIT}"],
+                               qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"],
                                Genres__genre=genre)
 
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(cannes_or_criterion + gen_films)])}"
