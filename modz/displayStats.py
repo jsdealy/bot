@@ -97,7 +97,7 @@ async def leaderboard(botsayer: Botsay):
     for imdb_rating_tup in imdb_rating_raw:
         imdb_dicts[imdb_rating_tup[0]] = imdb_rating_tup[1]
 
-    film_data_list = [[x,round(mean(film_dicts[x]),2)] for x in film_dicts.keys() if len(film_dicts[x]) > 2]
+    film_data_list = [[x,round(mean(film_dicts[x]),2)] for x in film_dicts.keys() if len(film_dicts[x]) > 1]
     film_data_list.sort(key=lambda x: x[1])
 
     class TierCounter:

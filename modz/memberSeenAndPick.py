@@ -18,49 +18,72 @@ async def listPicks(picker, botsay, channel):
 def retIndexTwo(lst):
     return lst[1]
 
-async def memberSeen(membername: str, botsayer: Botsay):
+async def memberSeen(membername: str, film: str, botsayer: Botsay):
     higher_than_all_rating_numbers = 14
-    con = sqlite3.connect("filmdata.db")
-    cur = con.cursor()
-    res = cur.execute("SELECT film_name, rating FROM Films, Members, Ratings WHERE Films.id = Ratings.film_id AND \
-        Members.id = Ratings.user_id AND rating > -1 AND Members.name LIKE ? ORDER BY rating;", (wildcardWrapForLIKE(membername),))
-    film_names_and_ratings_raw = res.fetchall() 
-    res = cur.execute("SELECT Films.film_name, imdb_id FROM Films, IMDb_ids WHERE Films.id = IMDb_ids.film_id;")
-    imdb_raw = res.fetchall()
-    con.close()
-    length_of_returned_table = len(film_names_and_ratings_raw)
-    if length_of_returned_table > 0 and len(film_names_and_ratings_raw[0]) > 1:
-        imdb_dicts: dict[str,str] = {}
-        for raw_imdb_tup in imdb_raw:
-            imdb_dicts[raw_imdb_tup[0]] = raw_imdb_tup[1]
-        result: str = ""
-        rategroup = film_names_and_ratings_raw[0][1]
-        rateseek = rategroup
-        row_index = 0
-        while True:
-            result = f"**{string.capwords(membername)}'s {numToRating(rategroup).capitalize()} Films**\n"
-            while row_index < length_of_returned_table and rateseek == rategroup:
-                if film_names_and_ratings_raw[row_index][0] in imdb_dicts.keys():
-                    result = result+f"[{string.capwords(film_names_and_ratings_raw[row_index][0])}](<http://www.imdb.com/title/{imdb_dicts[film_names_and_ratings_raw[row_index][0]]}>)\n"
-                else:
-                    result = result+f"{string.capwords(film_names_and_ratings_raw[row_index][0])}\n"
-                row_index += 1
-                try:
-                    rateseek = film_names_and_ratings_raw[row_index][1]
-                except:
-                    rateseek = higher_than_all_rating_numbers
-            if rateseek < higher_than_all_rating_numbers:
-                rategroup = rateseek        
-            try:
-                print(result)
-            except:
-                print("Some sort of problem!")
-            await botsayer.say(result)
-            if row_index >= length_of_returned_table or rateseek >= higher_than_all_rating_numbers:
-                break
-        print("finished")
+    if film != "all":
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
+        res = cur.execute("SELECT film_name, rating FROM Films, Members, Ratings WHERE Films.id = Ratings.film_id AND \
+            Members.id = Ratings.user_id AND rating > -1 AND Members.name LIKE ? AND film_name LIKE ?;", (wildcardWrapForLIKE(membername), wildcardWrapForLIKE(film),))
+        film_name_and_rating_raw = res.fetchall() 
+        res = cur.execute("SELECT imdb_id FROM Films, IMDb_ids WHERE Films.id = IMDb_ids.film_id AND film_name LIKE ?;", (wildcardWrapForLIKE(film),))
+        imdb_raw = res.fetchall()
+        con.close()
+        print(len(film_name_and_rating_raw))
+        print(film_name_and_rating_raw)
+        if len(film_name_and_rating_raw) == 0:
+            print("here")
+            result = f"{string.capwords(membername)} has no recorded rating for [{string.capwords(film)}](<http://www.imdb.com/title/{imdb_raw[0][0]})! :pregnant_man:"
+        else:
+            result = f"{string.capwords(membername)} gave [{string.capwords(film_name_and_rating_raw[0][0])}](<http://www.imdb.com/title/{imdb_raw[0][0]}) a rating of {numToRating(film_name_and_rating_raw[0][1]).capitalize()}. :clapper:"
+        await botsayer.say(result)
+        try:
+            print(result)
+        except: 
+            print("Some problem printing! 10927")
+
     else:
-        raise Exception("Nothing seen!")
+        con = sqlite3.connect("filmdata.db")
+        cur = con.cursor()
+        res = cur.execute("SELECT film_name, rating FROM Films, Members, Ratings WHERE Films.id = Ratings.film_id AND \
+            Members.id = Ratings.user_id AND rating > -1 AND Members.name LIKE ? ORDER BY rating;", (wildcardWrapForLIKE(membername),))
+        film_names_and_ratings_raw = res.fetchall() 
+        res = cur.execute("SELECT Films.film_name, imdb_id FROM Films, IMDb_ids WHERE Films.id = IMDb_ids.film_id;")
+        imdb_raw = res.fetchall()
+        con.close()
+        length_of_returned_table = len(film_names_and_ratings_raw)
+        if length_of_returned_table > 0 and len(film_names_and_ratings_raw[0]) > 1:
+            imdb_dicts: dict[str,str] = {}
+            for raw_imdb_tup in imdb_raw:
+                imdb_dicts[raw_imdb_tup[0]] = raw_imdb_tup[1]
+            result: str = ""
+            rategroup = film_names_and_ratings_raw[0][1]
+            rateseek = rategroup
+            row_index = 0
+            while True:
+                result = f"**{string.capwords(membername)}'s {numToRating(rategroup).capitalize()} Films**\n"
+                while row_index < length_of_returned_table and rateseek == rategroup:
+                    if film_names_and_ratings_raw[row_index][0] in imdb_dicts.keys():
+                        result = result+f"[{string.capwords(film_names_and_ratings_raw[row_index][0])}](<http://www.imdb.com/title/{imdb_dicts[film_names_and_ratings_raw[row_index][0]]}>)\n"
+                    else:
+                        result = result+f"{string.capwords(film_names_and_ratings_raw[row_index][0])}\n"
+                    row_index += 1
+                    try:
+                        rateseek = film_names_and_ratings_raw[row_index][1]
+                    except:
+                        rateseek = higher_than_all_rating_numbers
+                if rateseek < higher_than_all_rating_numbers:
+                    rategroup = rateseek        
+                try:
+                    print(result)
+                except:
+                    print("Some sort of problem!")
+                await botsayer.say(result)
+                if row_index >= length_of_returned_table or rateseek >= higher_than_all_rating_numbers:
+                    break
+            print("finished")
+        else:
+            raise Exception("Nothing seen!")
 
 
 

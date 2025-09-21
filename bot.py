@@ -1,4 +1,5 @@
 # bot.py
+import datetime
 import random,mechanicalsoup,string,sqlite3,datetime
 from discord.ext import commands
 from modz.emoji import discord_emojis
@@ -129,6 +130,13 @@ async def picks_autocomplete(interaction: discord.Interaction, current: str,) ->
     ret.reverse()
     return ret[:25]
 
+async def seen_picks_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
+    films = getAllPicks()
+    films.append("all")
+    ret = [discord.app_commands.Choice(name=string.capwords(film), value=film) for film in films if current.lower() in film]
+    ret.reverse()
+    return ret[:25]
+
 async def genre_autocomplete(interaction: discord.Interaction, current: str,) -> list[discord.app_commands.Choice[str]]:
     ret = [discord.app_commands.Choice(name=genre, value=genre) for genre in genres if current.lower() in genre.lower()]
     random.shuffle(ret)
@@ -244,6 +252,46 @@ async def list_films(interaction: discord.Interaction, film: str):
         await interaction.response.send_message(f"Error: {e}")
         raise e
 
+
+@bot.tree.command(name="crowdpleaser", description="grab a selection of crowdpleaser films", guild=guild)
+@discord.app_commands.choices(visibility=[discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1)])
+@discord.app_commands.choices(recent=[discord.app_commands.Choice(name="No",  value = 1890), discord.app_commands.Choice(name="Yes", value = datetime.datetime.now().year-3)])
+async def crowdpleaser(interaction: discord.Interaction, visibility: int, recent: int):
+    try:
+        con = MDCon()
+        channel = interaction.channel
+        gen_films = []
+        # await interaction.response.defer()
+        gen_films = select(con.cur(),
+                           "Films.title",
+                           "Films.tconst",
+                           tables=["Films","Ratings","Years"],
+                           joins=["Ratings.tconst=Films.tconst",
+                                  "Ratings.rating > 7.3",
+                                  "Ratings.numVotes > 70000",
+                                  "Years.tconst=Films.tconst",
+                                  f"Years.year > {recent}"],
+                           qualifiers=["ORDER BY RANDOM() LIMIT 5"])
+        res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(gen_films)])}"
+        res = res if len(res)>0 else "No results! :pregnant_man:"
+
+        if not interaction.is_expired():
+            await interaction.response.send_message(res,ephemeral=True if visibility == 0 else False)
+        else:
+            await botsayer.setChannel(channel).say(res)
+
+        log(interaction.user.name, "crowdpleaser")
+
+    except Exception as e:
+        try:
+            await interaction.response.send_message(f"Error: {e}")
+        except Exception as e1:
+            try:
+                await botsayer.setChannel(interaction.channel).say(f"Error: {e1}")
+            except Exception as e2:
+                print(f"ERROR: {e2}")
+
+
 @bot.tree.command(name="grab", description="grab a selection of random films meeting search criteria", guild=guild)
 @discord.app_commands.autocomplete(genre=genre_autocomplete)
 @discord.app_commands.autocomplete(language=lang_autocomplete)
@@ -281,8 +329,8 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                joins=["Ratings.tconst=Films.tconst",
                                       "Films.tconst=Genres.tconst",
                                       "Languages.tconst=Films.tconst",
-                                      "Ratings.rating > 6.5",
-                                      "Ratings.numVotes > 3000"],
+                                      "Ratings.rating > 7",
+                                      "Ratings.numVotes > 10000"],
                                qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"],
                                Genres__genre=genre,
                                Languages__lang=language)
@@ -306,8 +354,8 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                tables=["Films","Ratings","Languages"],
                                joins=["Ratings.tconst=Films.tconst",
                                       "Languages.tconst=Films.tconst", 
-                                      "Ratings.rating > 6.5",
-                                      "Ratings.numVotes > 3000"],
+                                      "Ratings.rating > 7",
+                                      "Ratings.numVotes > 10000"],
                                qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"],
                                Languages__lang=language)
 
@@ -327,8 +375,8 @@ async def grab(interaction: discord.Interaction,genre: str,language: str,visibil
                                "Films.tconst",
                                tables=["Films","Ratings"],
                                joins=["Ratings.tconst=Films.tconst",
-                                      "Ratings.rating > 6.5",
-                                      "Ratings.numVotes > 3000"],
+                                      "Ratings.rating > 7",
+                                      "Ratings.numVotes > 10000"],
                                qualifiers=[f"ORDER BY RANDOM() LIMIT {gen_limit}"])
 
         # any lang, genre specified <== 12/13/24 17:54:53 # 
@@ -418,9 +466,10 @@ async def pick_func(interaction: discord.Interaction, film: str):
 
 @bot.tree.command(name="seen", description="print a summary of a club member's ratings", guild=guild)
 @discord.app_commands.choices(member=[discord.app_commands.Choice(name=string.capwords(member), value=member) for member in members])
-async def seen(interaction: discord.Interaction, member: str):
-    await interaction.response.send_message(":clapper:")
-    await memberSeen(member, botsayer.setChannel(interaction.channel))
+@discord.app_commands.autocomplete(film=seen_picks_autocomplete)
+async def seen(interaction: discord.Interaction, member: str, film: str):
+    await interaction.response.send_message(f"{random.choice(["ooh", "ahh", "wut...", "hey!", "noice!", "dank?", "i did it", "holy smokers", "looky here", "yo...", "i remember i think", "say huh", "poop!", "i honked on it", "it's time...", "don't get all weird", "something is stankin"]).capitalize()} {random.choice(discord_emojis)}")
+    await memberSeen(member, film, botsayer.setChannel(interaction.channel))
 
 
 @bot.tree.command(name="choose", description="choose randomly between stuff separated by semicolons", guild=guild)
