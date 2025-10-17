@@ -255,8 +255,19 @@ async def list_films(interaction: discord.Interaction, film: str):
 
 @bot.tree.command(name="crowdpleaser", description="grab a selection of crowdpleaser films", guild=guild)
 @discord.app_commands.choices(visibility=[discord.app_commands.Choice(name="Private",  value = 0), discord.app_commands.Choice(name="Public", value = 1)])
-@discord.app_commands.choices(recent=[discord.app_commands.Choice(name="No",  value = 1890), discord.app_commands.Choice(name="Yes", value = datetime.datetime.now().year-3)])
-async def crowdpleaser(interaction: discord.Interaction, visibility: int, recent: int):
+@discord.app_commands.choices(era=
+                  [discord.app_commands.Choice(name="Doesn't Matter",  value = "1890:"+str(datetime.datetime.now().year)),
+                   discord.app_commands.Choice(name="Golden Age",  value = "1890:1945"),
+                   discord.app_commands.Choice(name="Postwar", value = "1946:1959"),
+                   discord.app_commands.Choice(name="The Sixties", value = "1960:1969"),
+                   discord.app_commands.Choice(name="The Seventies", value = "1970:1979"),
+                   discord.app_commands.Choice(name="The Eighties", value = "1980:1989"),
+                   discord.app_commands.Choice(name="The Nineties", value = "1990:1999"),
+                   discord.app_commands.Choice(name="The Oughts", value = "2000:2009"),
+                   discord.app_commands.Choice(name="The Teens", value = "2010:2019"),
+                   discord.app_commands.Choice(name="The Twenties", value = "2020:"+str(datetime.datetime.now().year)),
+                   ])
+async def crowdpleaser(interaction: discord.Interaction, visibility: int, era: str):
     try:
         con = MDCon()
         channel = interaction.channel
@@ -267,10 +278,11 @@ async def crowdpleaser(interaction: discord.Interaction, visibility: int, recent
                            "Films.tconst",
                            tables=["Films","Ratings","Years"],
                            joins=["Ratings.tconst=Films.tconst",
-                                  "Ratings.rating > 7.3",
+                                  "Ratings.rating >= 7.3",
                                   "Ratings.numVotes > 70000",
                                   "Years.tconst=Films.tconst",
-                                  f"Years.year > {recent}"],
+                                 f"Years.year >= {era.split(':')[0]}",
+                                 f"Years.year <= {era.split(':')[1]}"],
                            qualifiers=["ORDER BY RANDOM() LIMIT 5"])
         res = f"{'\n'.join([f"[{x[0]}](http://www.imdb.com/title/{x[1]})" for x in set(gen_films)])}"
         res = res if len(res)>0 else "No results! :pregnant_man:"
