@@ -9,5 +9,7 @@ def nameconvert(name: str) -> str:
         return "justin"
     if name.startswith("mtbiz"):
         return "taylor"
+    if name.startswith("dblac"):
+        return "dylan"
     else:
         return name.lower()
