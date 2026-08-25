@@ -5,7 +5,7 @@ def nameconvert(name: str) -> str:
         return "patrick"
     if name.startswith("tomotheos"):
         return "tim"
-    if name.startswith("jdealy") or name.startswith("j__") or name.startswith("rabq") or name.startswith("jcc"):
+    if name.startswith("jdealy") or name.startswith("ju_") or name.startswith("rabq") or name.startswith("jcc"):
         return "justin"
     if name.startswith("mtbiz"):
         return "taylor"
